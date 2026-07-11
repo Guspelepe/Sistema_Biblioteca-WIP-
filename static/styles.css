@@ -5,7 +5,7 @@
     --bege: #E8DCC8;
     --dourado: #C9A96E;
     --branco: #ffffff;
-    --sombra: 0 8px 20px rgba(0,0,0,0.1);
+    --sombra: 0 8px 20px rgba(0,0,0,0.2);
     --radius: 12px;
 }
 
@@ -17,13 +17,31 @@
 }
 
 body {
-    background-color: #f0ebe0;
+    background-image: url('fundo.jpg');
+    /* ou use o caminho absoluto a partir da raiz do projeto: */
+    /* background-image: url('../static/fundo.jpg'); */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
     padding: 20px;
-    background-image: linear-gradient(135deg, #f5f0e8 0%, #e8dcc8 100%);
+    position: relative;
+}
+
+/* Overlay escuro para melhorar legibilidade */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 0;
 }
 
 .container {
@@ -35,6 +53,7 @@ body {
     max-width: 550px;
     text-align: center;
     position: relative;
+    z-index: 1;
     transition: all 0.3s ease;
 }
 
@@ -99,12 +118,12 @@ button {
 button:hover {
     background-color: #6b4320;
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(139, 90, 43, 0.4);
+    box-shadow: 0 6px 15px rgba(139, 90, 43, 0.5);
 }
 
 button.voltar {
     background-color: #b0a090;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     margin-top: 15px;
 }
 
@@ -140,7 +159,7 @@ input, select {
 
 input:focus, select:focus {
     border-color: var(--marrom);
-    box-shadow: 0 0 0 3px rgba(139, 90, 43, 0.1);
+    box-shadow: 0 0 0 3px rgba(139, 90, 43, 0.2);
 }
 
 input[readonly] {
@@ -168,7 +187,7 @@ input[readonly] {
     max-height: 200px;
     overflow-y: auto;
     margin-top: 5px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .lista-livros .item-livro {
@@ -215,20 +234,18 @@ input[readonly] {
 }
 
 .notificacao {
-    background-color: #f9f5ed;
-    border-left: 5px solid var(--marrom);
-    padding: 15px;
-    margin: 15px 0;
+    background-color: #4caf50;
+    color: white;
+    padding: 12px 20px;
     border-radius: 8px;
-    color: #4A3F35;
+    margin-bottom: 20px;
     font-weight: 500;
+    text-align: center;
     animation: fadeIn 0.3s ease;
 }
 
 .notificacao.erro {
-    border-left-color: #c0392b;
-    background-color: #fdf0ed;
-    color: #922b21;
+    background-color: #e74c3c;
 }
 
 @media (max-width: 480px) {
