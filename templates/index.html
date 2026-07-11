@@ -3,8 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bibliotecaa – Aluguel de Livros</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Biblioteca – Aluguel de Livros</title>
+    <style>
+        :root {
+            --marrom-escuro: #4A3F35;
+            --marrom: #8B5A2B;
+            --bege-claro: #F5F0E8;
+            --bege: #E8DCC8;
+            --dourado: #C9A96E;
+            --branco: #ffffff;
+            --sombra: 0 8px 20px rgba(0,0,0,0.1);
+            --radius: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0ebe0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            background-image: linear-gradient(135deg, #f5f0e8 0%, #e8dcc8 100%);
+        }
+
+        .container {
+            background: var(--branco);
+            border-radius: 20px;
+            box-shadow: var(--sombra);
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 550px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            color: var(--marrom-escuro);
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        h2 {
+            color: var(--marrom);
+            margin-bottom: 20px;
+            font-weight: 500;
+            font-size: 1.5rem;
+        }
+
+        p {
+            color: #5e503a;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+        }
+
+        .tela {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tela.ativa {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .botoes {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        button {
+            background-color: var(--marrom);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 10px rgba(139, 90, 43, 0.3);
+            width: 100%;
+            max-width: 350px;
+            margin: 0 auto;
+        }
+
+        button:hover {
+            background-color: #6b4320;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(139, 90, 43, 0.4);
+        }
+
+        button.voltar {
+            background-color: #b0a090;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-top: 15px;
+        }
+
+        button.voltar:hover {
+            background-color: #8f806f;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            text-align: left;
+            margin-bottom: 10px;
+        }
+
+        label {
+            font-weight: 600;
+            color: var(--marrom-escuro);
+            margin-bottom: -10px;
+            font-size: 0.9rem;
+        }
+
+        input, select {
+            padding: 12px 16px;
+            border: 2px solid #d6c9b5;
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: #fdfaf6;
+            transition: border 0.2s;
+            outline: none;
+            width: 100%;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--marrom);
+            box-shadow: 0 0 0 3px rgba(139, 90, 43, 0.1);
+        }
+
+        input[readonly] {
+            background-color: #f0ebe0;
+            color: #5e503a;
+            font-weight: 500;
+        }
+
+        .busca-livros {
+            margin: 5px 0 10px;
+            text-align: left;
+        }
+
+        .busca-livros label {
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+            display: block;
+        }
+
+        .lista-livros {
+            display: none;
+            background: white;
+            border: 2px solid #d6c9b5;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .lista-livros .item-livro {
+            padding: 10px 16px;
+            border-bottom: 1px solid #f0e7d8;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+        }
+
+        .lista-livros .item-livro:last-child {
+            border-bottom: none;
+        }
+
+        .lista-livros .item-livro:hover {
+            background-color: #f5efe2;
+            color: var(--marrom);
+        }
+
+        .lista-livros .sem-resultados {
+            padding: 15px;
+            text-align: center;
+            color: #8b7a6b;
+            font-style: italic;
+        }
+
+        #info-devolucao {
+            background-color: #f9f5ed;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 5px solid var(--marrom);
+        }
+
+        #info-devolucao p {
+            margin-bottom: 15px;
+            font-size: 1rem;
+            color: var(--marrom-escuro);
+        }
+
+        #info-devolucao span {
+            font-weight: 700;
+            color: #3e2e1c;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 25px 20px;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+            button {
+                padding: 12px 20px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -24,7 +253,7 @@
             <p>O cliente já possui cadastro?</p>
             <div class="botoes">
                 <button onclick="mostrar('cadastro-novo')">✨ Cliente Novo</button>
-                <button onclick="mostrar('pedido')">👤 Cliente Antigo</button>
+                <button onclick="prepararPedido()">👤 Cliente Antigo</button>
                 <button class="voltar" onclick="mostrar('inicio')">↩ Voltar</button>
             </div>
         </div>
@@ -47,23 +276,18 @@
             <button class="voltar" onclick="mostrar('aluguel-opcao')">↩ Voltar</button>
         </div>
 
-        <!-- Tela: Pedido de aluguel (com lista de livros populares) -->
+        <!-- Tela: Pedido de aluguel -->
         <div id="pedido" class="tela">
             <h2>Realizar Pedido</h2>
             <form id="form-pedido" onsubmit="event.preventDefault(); confirmarAluguel();">
                 <label for="cliente-select">Cliente</label>
                 <select id="cliente-select" required>
                     <option value="">Selecione o cliente...</option>
-                    <option>João Silva</option>
-                    <option>Maria Oliveira</option>
-                    <option>Carlos Souza</option>
-                    <option>Ana Clara Santos</option>
                 </select>
 
                 <label for="livro">Nome do Livro</label>
                 <input type="text" id="livro" placeholder="Digite o título do livro" required>
 
-                <!-- Filtro de livros populares -->
                 <div class="busca-livros">
                     <label for="filtro-livro">🔎 Filtrar lista de livros populares</label>
                     <input type="text" id="filtro-livro" placeholder="Pesquise na lista..." oninput="filtrarLivros()">
@@ -99,7 +323,7 @@
     </div>
 
     <script>
-        // Lista dos 100 livros mais populares
+        // Array com livros populares
         const livrosPopulares = [
             "Dom Quixote - Miguel de Cervantes",
             "1984 - George Orwell",
@@ -207,6 +431,53 @@
             "Ratos e Homens - John Steinbeck"
         ];
 
+        const STORAGE_CLIENTES = 'biblioteca_clientes';
+        const STORAGE_ALUGUEIS = 'biblioteca_alugueis';
+
+        function carregarClientes() {
+            const dados = localStorage.getItem(STORAGE_CLIENTES);
+            return dados ? JSON.parse(dados) : [];
+        }
+
+        function salvarClientes(clientes) {
+            localStorage.setItem(STORAGE_CLIENTES, JSON.stringify(clientes));
+        }
+
+        function carregarAlugueis() {
+            const dados = localStorage.getItem(STORAGE_ALUGUEIS);
+            return dados ? JSON.parse(dados) : [];
+        }
+
+        function salvarAlugueis(alugueis) {
+            localStorage.setItem(STORAGE_ALUGUEIS, JSON.stringify(alugueis));
+        }
+
+        function mostrar(id) {
+            document.querySelectorAll('.tela').forEach(tela => tela.classList.remove('ativa'));
+            document.getElementById(id).classList.add('ativa');
+            if (id === 'inicio') {
+                limparFormularios();
+            }
+            if (id === 'pedido') {
+                carregarSelectClientes();
+            }
+            if (id === 'devolucao') {
+                document.getElementById('nome-cliente-devolucao').value = '';
+                document.getElementById('info-devolucao').style.display = 'none';
+            }
+        }
+
+        function limparFormularios() {
+            document.querySelectorAll('input:not([readonly]), select').forEach(el => {
+                if (el.type !== 'submit' && el.type !== 'button') el.value = '';
+            });
+            document.getElementById('data-devolucao').value = '';
+            document.getElementById('info-devolucao').style.display = 'none';
+            document.getElementById('lista-livros').innerHTML = '';
+            document.getElementById('lista-livros').style.display = 'none';
+            document.getElementById('filtro-livro').value = '';
+        }
+
         function filtrarLivros() {
             const filtro = document.getElementById('filtro-livro').value.toLowerCase();
             const listaDiv = document.getElementById('lista-livros');
@@ -229,7 +500,7 @@
                 item.className = 'item-livro';
                 item.textContent = livro;
                 item.addEventListener('click', function() {
-                    document.getElementById('livro').value = livro.split(' - ')[0]; // preenche só o título
+                    document.getElementById('livro').value = livro.split(' - ')[0];
                     document.getElementById('filtro-livro').value = '';
                     listaDiv.innerHTML = '';
                     listaDiv.style.display = 'none';
@@ -239,7 +510,6 @@
             listaDiv.style.display = 'block';
         }
 
-        // Fecha a lista ao clicar fora (opcional)
         document.addEventListener('click', function(event) {
             const listaDiv = document.getElementById('lista-livros');
             const filtroInput = document.getElementById('filtro-livro');
@@ -251,29 +521,59 @@
             }
         });
 
-        // Navegação entre telas (mantida)
-        function mostrar(id) {
-            document.querySelectorAll('.tela').forEach(tela => tela.classList.remove('ativa'));
-            document.getElementById(id).classList.add('ativa');
-            if (id === 'inicio') limparFormularios();
+        function cadastrar() {
+            const nome = document.getElementById('nome').value.trim();
+            const cpf = document.getElementById('cpf').value.trim();
+            const nascimento = document.getElementById('nascimento').value;
+            if (!nome || !cpf || !nascimento) {
+                alert('Preencha todos os campos.');
+                return;
+            }
+
+            const clientes = carregarClientes();
+            if (clientes.some(c => c.cpf === cpf)) {
+                alert('CPF já cadastrado.');
+                return;
+            }
+
+            const novoCliente = {
+                id: Date.now(),
+                nome: nome,
+                cpf: cpf,
+                nascimento: nascimento
+            };
+            clientes.push(novoCliente);
+            salvarClientes(clientes);
+            alert(`Cliente ${nome} cadastrado com sucesso!`);
+            document.getElementById('form-cadastro').reset();
+            prepararPedido(novoCliente.id);
         }
 
-        function limparFormularios() {
-            document.querySelectorAll('input:not([readonly]), select').forEach(el => {
-                if (el.type !== 'submit' && el.type !== 'button') el.value = '';
+        function carregarSelectClientes(selectedId = null) {
+            const select = document.getElementById('cliente-select');
+            const clientes = carregarClientes();
+            select.innerHTML = '<option value="">Selecione o cliente...</option>';
+            clientes.forEach(cliente => {
+                const option = document.createElement('option');
+                option.value = cliente.id;
+                option.textContent = cliente.nome + (cliente.cpf ? ` (CPF: ${cliente.cpf})` : '');
+                if (cliente.id == selectedId) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
             });
-            document.getElementById('data-devolucao').value = '';
-            document.getElementById('info-devolucao').style.display = 'none';
-            document.getElementById('lista-livros').innerHTML = '';
-            document.getElementById('lista-livros').style.display = 'none';
-            document.getElementById('filtro-livro').value = '';
+        }
+
+        function prepararPedido(clienteId = null) {
+            carregarSelectClientes(clienteId);
+            mostrar('pedido');
         }
 
         function calcularDevolucao() {
             const dataLocacao = document.getElementById('data-locacao').value;
             const campoDevolucao = document.getElementById('data-devolucao');
             if (dataLocacao) {
-                const data = new Date(dataLocacao);
+                const data = new Date(dataLocacao + 'T00:00:00');
                 data.setDate(data.getDate() + 7);
                 const dia = String(data.getDate()).padStart(2, '0');
                 const mes = String(data.getMonth() + 1).padStart(2, '0');
@@ -284,28 +584,43 @@
             }
         }
 
-        function cadastrar() {
-            const nome = document.getElementById('nome').value.trim();
-            const cpf = document.getElementById('cpf').value.trim();
-            const nasc = document.getElementById('nascimento').value;
-            if (!nome || !cpf || !nasc) { alert('Preencha todos os campos.'); return; }
-            alert(`Cliente ${nome} cadastrado com sucesso! Prossiga com o aluguel.`);
-            const select = document.getElementById('cliente-select');
-            const option = document.createElement('option');
-            option.text = nome;
-            select.add(option);
-            select.value = nome;
-            document.getElementById('form-cadastro').reset();
-            mostrar('pedido');
-        }
-
         function confirmarAluguel() {
-            const cliente = document.getElementById('cliente-select').value;
-            const livro = document.getElementById('livro').value.trim();
-            const dataLoc = document.getElementById('data-locacao').value;
-            const dataDev = document.getElementById('data-devolucao').value;
-            if (!cliente || !livro || !dataLoc) { alert('Preencha todos os campos do pedido.'); return; }
-            alert(`Aluguel registrado!\nCliente: ${cliente}\nLivro: "${livro}"\nDevolução em: ${dataDev}`);
+            const clienteId = parseInt(document.getElementById('cliente-select').value);
+            const livroTitulo = document.getElementById('livro').value.trim();
+            const dataLocacao = document.getElementById('data-locacao').value;
+            const dataDevolucao = document.getElementById('data-devolucao').value;
+
+            if (!clienteId || !livroTitulo || !dataLocacao) {
+                alert('Preencha todos os campos do pedido.');
+                return;
+            }
+
+            const clientes = carregarClientes();
+            const cliente = clientes.find(c => c.id === clienteId);
+            if (!cliente) {
+                alert('Cliente não encontrado.');
+                return;
+            }
+
+            const alugueis = carregarAlugueis();
+            const aluguelAtivo = alugueis.find(a => a.clienteId === clienteId && a.status === 'ativo');
+            if (aluguelAtivo) {
+                alert(`O cliente ${cliente.nome} já possui o livro "${aluguelAtivo.livro}" alugado. Devolva primeiro.`);
+                return;
+            }
+
+            const novoAluguel = {
+                id: Date.now(),
+                clienteId: clienteId,
+                livro: livroTitulo,
+                dataLocacao: dataLocacao,
+                dataDevolucaoPrevista: dataDevolucao,
+                status: 'ativo'
+            };
+            alugueis.push(novoAluguel);
+            salvarAlugueis(alugueis);
+
+            alert(`Aluguel registrado!\nCliente: ${cliente.nome}\nLivro: "${livroTitulo}"\nDevolução prevista: ${dataDevolucao}`);
             document.getElementById('form-pedido').reset();
             document.getElementById('data-devolucao').value = '';
             mostrar('inicio');
@@ -313,30 +628,56 @@
 
         function buscarCliente() {
             const nomeBusca = document.getElementById('nome-cliente-devolucao').value.trim().toLowerCase();
-            const nomesConhecidos = ['joão silva', 'maria oliveira', 'carlos souza', 'ana clara santos'];
-            const livros = {
-                'joão silva': 'Dom Casmurro',
-                'maria oliveira': 'A Moreninha',
-                'carlos souza': 'O Cortiço',
-                'ana clara santos': 'Capitães da Areia'
-            };
-            if (nomeBusca === '') { alert('Digite um nome para buscar.'); return; }
-            const encontrado = nomesConhecidos.find(n => n.includes(nomeBusca));
-            if (encontrado && livros[encontrado]) {
-                document.getElementById('livro-alugado').textContent = `"${livros[encontrado]}" (cliente: ${encontrado})`;
-            } else {
-                document.getElementById('livro-alugado').textContent = `"Livro Exemplo" (cliente não encontrado na base simulada)`;
+            if (nomeBusca === '') {
+                alert('Digite um nome para buscar.');
+                return;
             }
-            document.getElementById('info-devolucao').style.display = 'block';
+
+            const clientes = carregarClientes();
+            const alugueis = carregarAlugueis();
+            const clienteEncontrado = clientes.find(c => c.nome.toLowerCase().includes(nomeBusca));
+            if (!clienteEncontrado) {
+                alert('Cliente não encontrado.');
+                document.getElementById('info-devolucao').style.display = 'none';
+                return;
+            }
+
+            const aluguel = alugueis.find(a => a.clienteId === clienteEncontrado.id && a.status === 'ativo');
+            const infoDiv = document.getElementById('info-devolucao');
+            const livroSpan = document.getElementById('livro-alugado');
+
+            if (aluguel) {
+                livroSpan.textContent = `"${aluguel.livro}" (Cliente: ${clienteEncontrado.nome})`;
+                infoDiv.setAttribute('data-aluguel-id', aluguel.id);
+                infoDiv.style.display = 'block';
+            } else {
+                livroSpan.textContent = `Nenhum livro alugado ativo para ${clienteEncontrado.nome}.`;
+                infoDiv.removeAttribute('data-aluguel-id');
+                infoDiv.style.display = 'block';
+            }
         }
 
         function devolver() {
-            const nomeCliente = document.getElementById('nome-cliente-devolucao').value.trim();
-            const livroInfo = document.getElementById('livro-alugado').textContent;
-            alert(`Devolução confirmada!\nCliente: ${nomeCliente}\nLivro: ${livroInfo}`);
-            document.getElementById('nome-cliente-devolucao').value = '';
-            document.getElementById('info-devolucao').style.display = 'none';
-            mostrar('inicio');
+            const infoDiv = document.getElementById('info-devolucao');
+            const aluguelId = infoDiv.getAttribute('data-aluguel-id');
+            if (!aluguelId) {
+                alert('Nenhum empréstimo ativo para devolução.');
+                return;
+            }
+
+            const alugueis = carregarAlugueis();
+            const index = alugueis.findIndex(a => a.id == aluguelId);
+            if (index !== -1 && alugueis[index].status === 'ativo') {
+                alugueis[index].status = 'devolvido';
+                alugueis[index].dataDevolucaoReal = new Date().toISOString().split('T')[0];
+                salvarAlugueis(alugueis);
+                alert(`Livro "${alugueis[index].livro}" devolvido com sucesso!`);
+                document.getElementById('nome-cliente-devolucao').value = '';
+                infoDiv.style.display = 'none';
+                infoDiv.removeAttribute('data-aluguel-id');
+            } else {
+                alert('Erro: empréstimo não encontrado ou já devolvido.');
+            }
         }
     </script>
 </body>
