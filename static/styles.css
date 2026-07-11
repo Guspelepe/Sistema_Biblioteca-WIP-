@@ -214,6 +214,23 @@ input[readonly] {
     color: #3e2e1c;
 }
 
+.notificacao {
+    background-color: #f9f5ed;
+    border-left: 5px solid var(--marrom);
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 8px;
+    color: #4A3F35;
+    font-weight: 500;
+    animation: fadeIn 0.3s ease;
+}
+
+.notificacao.erro {
+    border-left-color: #c0392b;
+    background-color: #fdf0ed;
+    color: #922b21;
+}
+
 @media (max-width: 480px) {
     .container {
         padding: 25px 20px;

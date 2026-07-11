@@ -8,6 +8,8 @@
 </head>
 <body>
     <div class="container">
+        <div id="notificacao" class="notificacao" style="display: none;"></div>
+
         <!-- Tela Inicial -->
         <div id="inicio" class="tela ativa">
             <h1>📚 Biblioteca Central</h1>
@@ -50,6 +52,9 @@
         <!-- Tela: Pedido de aluguel -->
         <div id="pedido" class="tela">
             <h2>Realizar Pedido</h2>
+            <div id="sem-clientes" style="display: none; color: #8b7a6b; margin-bottom: 20px;">
+                ⚠️ Nenhum cliente cadastrado. Cadastre um novo cliente primeiro.
+            </div>
             <form id="form-pedido" onsubmit="event.preventDefault(); confirmarAluguel();">
                 <label for="cliente-select">Cliente</label>
                 <select id="cliente-select" required>
@@ -71,7 +76,7 @@
                 <label for="data-devolucao">Data de Devolução (7 dias)</label>
                 <input type="text" id="data-devolucao" readonly placeholder="Automático ao selecionar data">
 
-                <button type="submit">✅ Confirmar Aluguel</button>
+                <button type="submit" id="btn-confirmar-aluguel">✅ Confirmar Aluguel</button>
             </form>
             <button class="voltar" onclick="mostrar('inicio')">↩ Cancelar</button>
         </div>
@@ -85,6 +90,11 @@
                 <button onclick="buscarCliente()" style="margin-top: 15px; width: 100%;">🔍 Buscar</button>
             </div>
 
+            <div id="lista-clientes-devolucao" style="display: none; margin: 15px 0;">
+                <p style="margin-bottom: 5px; font-weight: 600;">Selecione o cliente:</p>
+                <div id="opcoes-clientes" style="text-align: left;"></div>
+            </div>
+
             <div id="info-devolucao" style="display: none;">
                 <p>📘 Livro alugado: <span id="livro-alugado"></span></p>
                 <button onclick="devolver()">📦 Confirmar Devolução</button>
@@ -94,120 +104,71 @@
     </div>
 
     <script>
-        // Array com livros populares
-        const livrosPopulares = [
-            "Dom Quixote - Miguel de Cervantes",
-            "1984 - George Orwell",
-            "Orgulho e Preconceito - Jane Austen",
-            "O Senhor dos Anéis - J.R.R. Tolkien",
-            "Cem Anos de Solidão - Gabriel García Márquez",
-            "Harry Potter e a Pedra Filosofal - J.K. Rowling",
-            "O Apanhador no Campo de Centeio - J.D. Salinger",
-            "O Grande Gatsby - F. Scott Fitzgerald",
-            "Crime e Castigo - Fiódor Dostoiévski",
-            "Guerra e Paz - Liev Tolstói",
-            "As Aventuras de Tom Sawyer - Mark Twain",
-            "Moby Dick - Herman Melville",
-            "Ulisses - James Joyce",
-            "O Processo - Franz Kafka",
-            "Ensaio sobre a Cegueira - José Saramago",
-            "A Metamorfose - Franz Kafka",
-            "O Pequeno Príncipe - Antoine de Saint-Exupéry",
-            "A Divina Comédia - Dante Alighieri",
-            "Hamlet - William Shakespeare",
-            "Romeu e Julieta - William Shakespeare",
-            "Os Miseráveis - Victor Hugo",
-            "O Conde de Monte Cristo - Alexandre Dumas",
-            "Jane Eyre - Charlotte Brontë",
-            "O Morro dos Ventos Uivantes - Emily Brontë",
-            "Anna Kariênina - Liev Tolstói",
-            "A Revolução dos Bichos - George Orwell",
-            "Fahrenheit 451 - Ray Bradbury",
-            "Admirável Mundo Novo - Aldous Huxley",
-            "O Sol é para Todos - Harper Lee",
-            "O Lobo da Estepe - Hermann Hesse",
-            "Sidarta - Hermann Hesse",
-            "A Náusea - Jean-Paul Sartre",
-            "O Estrangeiro - Albert Camus",
-            "A Peste - Albert Camus",
-            "Doutor Jivago - Boris Pasternak",
-            "Lolita - Vladimir Nabokov",
-            "Memórias Póstumas de Brás Cubas - Machado de Assis",
-            "Dom Casmurro - Machado de Assis",
-            "Grande Sertão: Veredas - João Guimarães Rosa",
-            "Vidas Secas - Graciliano Ramos",
-            "Capitães da Areia - Jorge Amado",
-            "Gabriela, Cravo e Canela - Jorge Amado",
-            "O Tempo e o Vento - Érico Veríssimo",
-            "A Hora da Estrela - Clarice Lispector",
-            "Água Viva - Clarice Lispector",
-            "Memorial de Aires - Machado de Assis",
-            "São Bernardo - Graciliano Ramos",
-            "Angústia - Graciliano Ramos",
-            "Macunaíma - Mário de Andrade",
-            "O Cortiço - Aluísio Azevedo",
-            "Lucíola - José de Alencar",
-            "Senhora - José de Alencar",
-            "Iracema - José de Alencar",
-            "O Guarani - José de Alencar",
-            "Quincas Borba - Machado de Assis",
-            "O Alienista - Machado de Assis",
-            "A Moreninha - Joaquim Manuel de Macedo",
-            "Noite na Taverna - Álvares de Azevedo",
-            "Lira dos Vinte Anos - Álvares de Azevedo",
-            "Poemas - Carlos Drummond de Andrade",
-            "Morte e Vida Severina - João Cabral de Melo Neto",
-            "O Quinze - Rachel de Queiroz",
-            "A Bagaceira - José Américo de Almeida",
-            "O Auto da Compadecida - Ariano Suassuna",
-            "O Pagador de Promessas - Dias Gomes",
-            "Os Sertões - Euclides da Cunha",
-            "Casa-Grande & Senzala - Gilberto Freyre",
-            "Raízes do Brasil - Sérgio Buarque de Holanda",
-            "O Povo Brasileiro - Darcy Ribeiro",
-            "Brasil: Uma Biografia - Lilia M. Schwarcz & Heloisa M. Starling",
-            "O Homem que Calculava - Malba Tahan",
-            "Pollyanna - Eleanor H. Porter",
-            "Anne de Green Gables - Lucy Maud Montgomery",
-            "As Crônicas de Nárnia - C.S. Lewis",
-            "O Hobbit - J.R.R. Tolkien",
-            "Jogos Vorazes - Suzanne Collins",
-            "Divergente - Veronica Roth",
-            "A Seleção - Kiera Cass",
-            "Cidades de Papel - John Green",
-            "A Culpa é das Estrelas - John Green",
-            "Extraordinário - R.J. Palacio",
-            "O Diário de Anne Frank - Anne Frank",
-            "A Menina que Roubava Livros - Markus Zusak",
-            "O Código Da Vinci - Dan Brown",
-            "Anjos e Demônios - Dan Brown",
-            "Inferno - Dan Brown",
-            "O Símbolo Perdido - Dan Brown",
-            "Fortaleza Digital - Dan Brown",
-            "A Garota no Trem - Paula Hawkins",
-            "O Silêncio dos Inocentes - Thomas Harris",
-            "Psicose - Robert Bloch",
-            "O Iluminado - Stephen King",
-            "It: A Coisa - Stephen King",
-            "Doutor Sono - Stephen King",
-            "Carrie, a Estranha - Stephen King",
-            "A Dança da Morte - Stephen King",
-            "O Nome da Rosa - Umberto Eco",
-            "O Perfume - Patrick Süskind",
-            "Clube da Luta - Chuck Palahniuk",
-            "A Sombra do Vento - Carlos Ruiz Zafón",
-            "O Jogo do Anjo - Carlos Ruiz Zafón",
-            "Marina - Carlos Ruiz Zafón",
-            "As Vinhas da Ira - John Steinbeck",
-            "Ratos e Homens - John Steinbeck"
-        ];
-
         const STORAGE_CLIENTES = 'biblioteca_clientes';
         const STORAGE_ALUGUEIS = 'biblioteca_alugueis';
 
+        const livrosPopulares = [
+            "Dom Quixote - Miguel de Cervantes", "1984 - George Orwell", "Orgulho e Preconceito - Jane Austen",
+            "O Senhor dos Anéis - J.R.R. Tolkien", "Cem Anos de Solidão - Gabriel García Márquez",
+            "Harry Potter e a Pedra Filosofal - J.K. Rowling", "O Apanhador no Campo de Centeio - J.D. Salinger",
+            "O Grande Gatsby - F. Scott Fitzgerald", "Crime e Castigo - Fiódor Dostoiévski",
+            "Guerra e Paz - Liev Tolstói", "As Aventuras de Tom Sawyer - Mark Twain",
+            "Moby Dick - Herman Melville", "Ulisses - James Joyce", "O Processo - Franz Kafka",
+            "Ensaio sobre a Cegueira - José Saramago", "A Metamorfose - Franz Kafka",
+            "O Pequeno Príncipe - Antoine de Saint-Exupéry", "A Divina Comédia - Dante Alighieri",
+            "Hamlet - William Shakespeare", "Romeu e Julieta - William Shakespeare",
+            "Os Miseráveis - Victor Hugo", "O Conde de Monte Cristo - Alexandre Dumas",
+            "Jane Eyre - Charlotte Brontë", "O Morro dos Ventos Uivantes - Emily Brontë",
+            "Anna Kariênina - Liev Tolstói", "A Revolução dos Bichos - George Orwell",
+            "Fahrenheit 451 - Ray Bradbury", "Admirável Mundo Novo - Aldous Huxley",
+            "O Sol é para Todos - Harper Lee", "O Lobo da Estepe - Hermann Hesse",
+            "Sidarta - Hermann Hesse", "A Náusea - Jean-Paul Sartre", "O Estrangeiro - Albert Camus",
+            "A Peste - Albert Camus", "Doutor Jivago - Boris Pasternak", "Lolita - Vladimir Nabokov",
+            "Memórias Póstumas de Brás Cubas - Machado de Assis", "Dom Casmurro - Machado de Assis",
+            "Grande Sertão: Veredas - João Guimarães Rosa", "Vidas Secas - Graciliano Ramos",
+            "Capitães da Areia - Jorge Amado", "Gabriela, Cravo e Canela - Jorge Amado",
+            "O Tempo e o Vento - Érico Veríssimo", "A Hora da Estrela - Clarice Lispector",
+            "Água Viva - Clarice Lispector", "Memorial de Aires - Machado de Assis",
+            "São Bernardo - Graciliano Ramos", "Angústia - Graciliano Ramos",
+            "Macunaíma - Mário de Andrade", "O Cortiço - Aluísio Azevedo",
+            "Lucíola - José de Alencar", "Senhora - José de Alencar", "Iracema - José de Alencar",
+            "O Guarani - José de Alencar", "Quincas Borba - Machado de Assis",
+            "O Alienista - Machado de Assis", "A Moreninha - Joaquim Manuel de Macedo",
+            "Noite na Taverna - Álvares de Azevedo", "Lira dos Vinte Anos - Álvares de Azevedo",
+            "Poemas - Carlos Drummond de Andrade", "Morte e Vida Severina - João Cabral de Melo Neto",
+            "O Quinze - Rachel de Queiroz", "A Bagaceira - José Américo de Almeida",
+            "O Auto da Compadecida - Ariano Suassuna", "O Pagador de Promessas - Dias Gomes",
+            "Os Sertões - Euclides da Cunha", "Casa-Grande & Senzala - Gilberto Freyre",
+            "Raízes do Brasil - Sérgio Buarque de Holanda", "O Povo Brasileiro - Darcy Ribeiro",
+            "Brasil: Uma Biografia - Lilia M. Schwarcz & Heloisa M. Starling",
+            "O Homem que Calculava - Malba Tahan", "Pollyanna - Eleanor H. Porter",
+            "Anne de Green Gables - Lucy Maud Montgomery", "As Crônicas de Nárnia - C.S. Lewis",
+            "O Hobbit - J.R.R. Tolkien", "Jogos Vorazes - Suzanne Collins",
+            "Divergente - Veronica Roth", "A Seleção - Kiera Cass", "Cidades de Papel - John Green",
+            "A Culpa é das Estrelas - John Green", "Extraordinário - R.J. Palacio",
+            "O Diário de Anne Frank - Anne Frank", "A Menina que Roubava Livros - Markus Zusak",
+            "O Código Da Vinci - Dan Brown", "Anjos e Demônios - Dan Brown",
+            "Inferno - Dan Brown", "O Símbolo Perdido - Dan Brown", "Fortaleza Digital - Dan Brown",
+            "A Garota no Trem - Paula Hawkins", "O Silêncio dos Inocentes - Thomas Harris",
+            "Psicose - Robert Bloch", "O Iluminado - Stephen King", "It: A Coisa - Stephen King",
+            "Doutor Sono - Stephen King", "Carrie, a Estranha - Stephen King",
+            "A Dança da Morte - Stephen King", "O Nome da Rosa - Umberto Eco",
+            "O Perfume - Patrick Süskind", "Clube da Luta - Chuck Palahniuk",
+            "A Sombra do Vento - Carlos Ruiz Zafón", "O Jogo do Anjo - Carlos Ruiz Zafón",
+            "Marina - Carlos Ruiz Zafón", "As Vinhas da Ira - John Steinbeck",
+            "Ratos e Homens - John Steinbeck"
+        ];
+
+        function notificar(mensagem, tipo = 'sucesso') {
+            const notif = document.getElementById('notificacao');
+            notif.textContent = mensagem;
+            notif.className = 'notificacao ' + (tipo === 'erro' ? 'erro' : '');
+            notif.style.display = 'block';
+            setTimeout(() => { notif.style.display = 'none'; }, 4000);
+        }
+
         function carregarClientes() {
-            const dados = localStorage.getItem(STORAGE_CLIENTES);
-            return dados ? JSON.parse(dados) : [];
+            return JSON.parse(localStorage.getItem(STORAGE_CLIENTES) || '[]');
         }
 
         function salvarClientes(clientes) {
@@ -215,8 +176,7 @@
         }
 
         function carregarAlugueis() {
-            const dados = localStorage.getItem(STORAGE_ALUGUEIS);
-            return dados ? JSON.parse(dados) : [];
+            return JSON.parse(localStorage.getItem(STORAGE_ALUGUEIS) || '[]');
         }
 
         function salvarAlugueis(alugueis) {
@@ -226,15 +186,20 @@
         function mostrar(id) {
             document.querySelectorAll('.tela').forEach(tela => tela.classList.remove('ativa'));
             document.getElementById(id).classList.add('ativa');
-            if (id === 'inicio') {
-                limparFormularios();
-            }
+            document.getElementById('notificacao').style.display = 'none';
+
+            if (id === 'inicio') limparFormularios();
             if (id === 'pedido') {
                 carregarSelectClientes();
+                const clientes = carregarClientes();
+                document.getElementById('sem-clientes').style.display = clientes.length === 0 ? 'block' : 'none';
+                document.getElementById('btn-confirmar-aluguel').disabled = clientes.length === 0;
             }
             if (id === 'devolucao') {
                 document.getElementById('nome-cliente-devolucao').value = '';
                 document.getElementById('info-devolucao').style.display = 'none';
+                document.getElementById('lista-clientes-devolucao').style.display = 'none';
+                document.getElementById('opcoes-clientes').innerHTML = '';
             }
         }
 
@@ -247,19 +212,41 @@
             document.getElementById('lista-livros').innerHTML = '';
             document.getElementById('lista-livros').style.display = 'none';
             document.getElementById('filtro-livro').value = '';
+            document.getElementById('sem-clientes').style.display = 'none';
         }
 
         function filtrarLivros() {
-            const filtro = document.getElementById('filtro-livro').value.toLowerCase();
+            const filtro = document.getElementById('filtro-livro').value.trim().toLowerCase();
             const listaDiv = document.getElementById('lista-livros');
             listaDiv.innerHTML = '';
 
-            if (filtro.trim() === '') {
+            if (filtro === '') {
                 listaDiv.style.display = 'none';
                 return;
             }
 
-            const resultados = livrosPopulares.filter(livro => livro.toLowerCase().includes(filtro));
+            // Função auxiliar para remover artigos iniciais do título
+            function removerArtigos(titulo) {
+                return titulo.replace(/^(O |A |Os |As |Um |Uma |The )/i, '').trim();
+            }
+
+            // Filtra todos os livros cujo título (sem artigo) contenha o filtro
+            let resultados = livrosPopulares.filter(livro => {
+                const tituloLimpo = removerArtigos(livro).toLowerCase();
+                return tituloLimpo.includes(filtro);
+            });
+
+            // Ordena: primeiro os que começam com o filtro, depois os demais
+            resultados.sort((a, b) => {
+                const tituloA = removerArtigos(a).toLowerCase();
+                const tituloB = removerArtigos(b).toLowerCase();
+                const aComeca = tituloA.startsWith(filtro);
+                const bComeca = tituloB.startsWith(filtro);
+                if (aComeca && !bComeca) return -1;
+                if (!aComeca && bComeca) return 1;
+                return tituloA.localeCompare(tituloB); // empate: ordem alfabética
+            });
+
             if (resultados.length === 0) {
                 listaDiv.innerHTML = '<div class="sem-resultados">Nenhum livro encontrado</div>';
                 listaDiv.style.display = 'block';
@@ -269,8 +256,11 @@
             resultados.forEach(livro => {
                 const item = document.createElement('div');
                 item.className = 'item-livro';
-                item.textContent = livro;
-                item.addEventListener('click', function() {
+                // Destaca o texto buscado no título
+                const regex = new RegExp(`(${filtro})`, 'gi');
+                item.innerHTML = livro.replace(regex, '<strong>$1</strong>');
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation(); // impede que o clique feche a lista antes de processar
                     document.getElementById('livro').value = livro.split(' - ')[0];
                     document.getElementById('filtro-livro').value = '';
                     listaDiv.innerHTML = '';
@@ -283,12 +273,8 @@
 
         document.addEventListener('click', function(event) {
             const listaDiv = document.getElementById('lista-livros');
-            const filtroInput = document.getElementById('filtro-livro');
             if (!event.target.closest('.busca-livros')) {
                 listaDiv.style.display = 'none';
-                if (document.activeElement !== filtroInput) {
-                    filtroInput.value = '';
-                }
             }
         });
 
@@ -296,26 +282,22 @@
             const nome = document.getElementById('nome').value.trim();
             const cpf = document.getElementById('cpf').value.trim();
             const nascimento = document.getElementById('nascimento').value;
+
             if (!nome || !cpf || !nascimento) {
-                alert('Preencha todos os campos.');
+                notificar('Preencha todos os campos.', 'erro');
                 return;
             }
 
             const clientes = carregarClientes();
             if (clientes.some(c => c.cpf === cpf)) {
-                alert('CPF já cadastrado.');
+                notificar('CPF já cadastrado.', 'erro');
                 return;
             }
 
-            const novoCliente = {
-                id: Date.now(),
-                nome: nome,
-                cpf: cpf,
-                nascimento: nascimento
-            };
+            const novoCliente = { id: Date.now(), nome, cpf, nascimento };
             clientes.push(novoCliente);
             salvarClientes(clientes);
-            alert(`Cliente ${nome} cadastrado com sucesso!`);
+            notificar(`Cliente ${nome} cadastrado com sucesso!`);
             document.getElementById('form-cadastro').reset();
             prepararPedido(novoCliente.id);
         }
@@ -327,15 +309,19 @@
             clientes.forEach(cliente => {
                 const option = document.createElement('option');
                 option.value = cliente.id;
-                option.textContent = cliente.nome + (cliente.cpf ? ` (CPF: ${cliente.cpf})` : '');
-                if (cliente.id == selectedId) {
-                    option.selected = true;
-                }
+                option.textContent = `${cliente.nome} (CPF: ${cliente.cpf})`;
+                if (cliente.id == selectedId) option.selected = true;
                 select.appendChild(option);
             });
         }
 
         function prepararPedido(clienteId = null) {
+            const clientes = carregarClientes();
+            if (clientes.length === 0 && !clienteId) {
+                notificar('Nenhum cliente cadastrado. Cadastre um novo cliente primeiro.', 'erro');
+                mostrar('aluguel-opcao');
+                return;
+            }
             carregarSelectClientes(clienteId);
             mostrar('pedido');
         }
@@ -346,10 +332,7 @@
             if (dataLocacao) {
                 const data = new Date(dataLocacao + 'T00:00:00');
                 data.setDate(data.getDate() + 7);
-                const dia = String(data.getDate()).padStart(2, '0');
-                const mes = String(data.getMonth() + 1).padStart(2, '0');
-                const ano = data.getFullYear();
-                campoDevolucao.value = `${dia}/${mes}/${ano}`;
+                campoDevolucao.value = data.toLocaleDateString('pt-BR');
             } else {
                 campoDevolucao.value = '';
             }
@@ -362,36 +345,47 @@
             const dataDevolucao = document.getElementById('data-devolucao').value;
 
             if (!clienteId || !livroTitulo || !dataLocacao) {
-                alert('Preencha todos os campos do pedido.');
+                notificar('Preencha todos os campos do pedido.', 'erro');
                 return;
             }
 
             const clientes = carregarClientes();
             const cliente = clientes.find(c => c.id === clienteId);
             if (!cliente) {
-                alert('Cliente não encontrado.');
+                notificar('Cliente não encontrado.', 'erro');
                 return;
             }
 
             const alugueis = carregarAlugueis();
-            const aluguelAtivo = alugueis.find(a => a.clienteId === clienteId && a.status === 'ativo');
-            if (aluguelAtivo) {
-                alert(`O cliente ${cliente.nome} já possui o livro "${aluguelAtivo.livro}" alugado. Devolva primeiro.`);
+
+            // Verifica se o cliente já tem algum livro alugado
+            if (alugueis.some(a => a.clienteId === clienteId && a.status === 'ativo')) {
+                notificar(`O cliente ${cliente.nome} já possui um livro alugado. Devolva primeiro.`, 'erro');
+                return;
+            }
+
+            // 🔥 NOVO: Verifica se o livro (título) já está alugado por outro cliente
+            const livroJaAlugado = alugueis.some(a => 
+                a.status === 'ativo' && 
+                a.livro.toLowerCase().trim() === livroTitulo.toLowerCase().trim()
+            );
+            if (livroJaAlugado) {
+                notificar(`O livro "${livroTitulo}" já está alugado no momento. Tente outro título.`, 'erro');
                 return;
             }
 
             const novoAluguel = {
                 id: Date.now(),
-                clienteId: clienteId,
+                clienteId,
                 livro: livroTitulo,
-                dataLocacao: dataLocacao,
+                dataLocacao,
                 dataDevolucaoPrevista: dataDevolucao,
                 status: 'ativo'
             };
             alugueis.push(novoAluguel);
             salvarAlugueis(alugueis);
 
-            alert(`Aluguel registrado!\nCliente: ${cliente.nome}\nLivro: "${livroTitulo}"\nDevolução prevista: ${dataDevolucao}`);
+            notificar(`Aluguel registrado! "${livroTitulo}" para ${cliente.nome}. Devolução em ${dataDevolucao}.`);
             document.getElementById('form-pedido').reset();
             document.getElementById('data-devolucao').value = '';
             mostrar('inicio');
@@ -400,39 +394,62 @@
         function buscarCliente() {
             const nomeBusca = document.getElementById('nome-cliente-devolucao').value.trim().toLowerCase();
             if (nomeBusca === '') {
-                alert('Digite um nome para buscar.');
+                notificar('Digite um nome para buscar.', 'erro');
                 return;
             }
 
             const clientes = carregarClientes();
-            const alugueis = carregarAlugueis();
-            const clienteEncontrado = clientes.find(c => c.nome.toLowerCase().includes(nomeBusca));
-            if (!clienteEncontrado) {
-                alert('Cliente não encontrado.');
+            const resultados = clientes.filter(c => c.nome.toLowerCase().includes(nomeBusca));
+
+            if (resultados.length === 0) {
+                notificar('Cliente não encontrado.', 'erro');
                 document.getElementById('info-devolucao').style.display = 'none';
+                document.getElementById('lista-clientes-devolucao').style.display = 'none';
                 return;
             }
 
-            const aluguel = alugueis.find(a => a.clienteId === clienteEncontrado.id && a.status === 'ativo');
+            if (resultados.length === 1) {
+                exibirInfoDevolucao(resultados[0]);
+                document.getElementById('lista-clientes-devolucao').style.display = 'none';
+            } else {
+                document.getElementById('info-devolucao').style.display = 'none';
+                const opcoesDiv = document.getElementById('opcoes-clientes');
+                opcoesDiv.innerHTML = '';
+                resultados.forEach(cliente => {
+                    const btn = document.createElement('button');
+                    btn.textContent = `${cliente.nome} (CPF: ${cliente.cpf})`;
+                    btn.style.marginBottom = '8px';
+                    btn.addEventListener('click', () => {
+                        exibirInfoDevolucao(cliente);
+                        document.getElementById('lista-clientes-devolucao').style.display = 'none';
+                    });
+                    opcoesDiv.appendChild(btn);
+                });
+                document.getElementById('lista-clientes-devolucao').style.display = 'block';
+            }
+        }
+
+        function exibirInfoDevolucao(cliente) {
+            const alugueis = carregarAlugueis();
+            const aluguel = alugueis.find(a => a.clienteId === cliente.id && a.status === 'ativo');
             const infoDiv = document.getElementById('info-devolucao');
             const livroSpan = document.getElementById('livro-alugado');
 
             if (aluguel) {
-                livroSpan.textContent = `"${aluguel.livro}" (Cliente: ${clienteEncontrado.nome})`;
+                livroSpan.textContent = `"${aluguel.livro}" (Cliente: ${cliente.nome})`;
                 infoDiv.setAttribute('data-aluguel-id', aluguel.id);
-                infoDiv.style.display = 'block';
             } else {
-                livroSpan.textContent = `Nenhum livro alugado ativo para ${clienteEncontrado.nome}.`;
+                livroSpan.textContent = `Nenhum livro alugado ativo para ${cliente.nome}.`;
                 infoDiv.removeAttribute('data-aluguel-id');
-                infoDiv.style.display = 'block';
             }
+            infoDiv.style.display = 'block';
         }
 
         function devolver() {
             const infoDiv = document.getElementById('info-devolucao');
             const aluguelId = infoDiv.getAttribute('data-aluguel-id');
             if (!aluguelId) {
-                alert('Nenhum empréstimo ativo para devolução.');
+                notificar('Nenhum empréstimo ativo para devolução.', 'erro');
                 return;
             }
 
@@ -442,12 +459,13 @@
                 alugueis[index].status = 'devolvido';
                 alugueis[index].dataDevolucaoReal = new Date().toISOString().split('T')[0];
                 salvarAlugueis(alugueis);
-                alert(`Livro "${alugueis[index].livro}" devolvido com sucesso!`);
+                notificar(`Livro "${alugueis[index].livro}" devolvido com sucesso!`);
                 document.getElementById('nome-cliente-devolucao').value = '';
                 infoDiv.style.display = 'none';
                 infoDiv.removeAttribute('data-aluguel-id');
+                document.getElementById('lista-clientes-devolucao').style.display = 'none';
             } else {
-                alert('Erro: empréstimo não encontrado ou já devolvido.');
+                notificar('Empréstimo não encontrado ou já devolvido.', 'erro');
             }
         }
     </script>
