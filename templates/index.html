@@ -5,6 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biblioteca – Aluguel de Livros</title>
     <link rel="stylesheet" href="../static/styles.css">
+    <script src="https://unpkg.com/dexie@3.2.3/dist/dexie.js"></script>
+    <style>
+        /* Estilos adicionais para a tela de histórico */
+        .tabela-historico {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+        .tabela-historico th {
+            background-color: var(--marrom);
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+        .tabela-historico td {
+            padding: 10px;
+            border-bottom: 1px solid #d6c9b5;
+            color: #4A3F35;
+        }
+        .tabela-historico tr:hover td {
+            background-color: #f5efe2;
+        }
+        .status-ativo {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .status-devolvido {
+            color: #8b7a6b;
+            font-weight: bold;
+        }
+        .sem-dados {
+            text-align: center;
+            color: #8b7a6b;
+            padding: 20px;
+            font-style: italic;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -17,6 +56,7 @@
             <div class="botoes">
                 <button onclick="mostrar('aluguel-opcao')">📖 Alugar Livro</button>
                 <button onclick="mostrar('devolucao')">📥 Devolver Livro</button>
+                <button onclick="mostrar('historico')">📋 Ver Aluguéis</button>
             </div>
         </div>
 
@@ -39,7 +79,7 @@
                 <input type="text" id="nome" placeholder="Ex: Ana Maria Ferreira" required>
 
                 <label for="cpf">CPF</label>
-                <input type="text" id="cpf" placeholder="000.000.000-00" required>
+                <input type="text" id="cpf" placeholder="000.000.000-00" required maxlength="14" oninput="mascararCPF(this)">
 
                 <label for="nascimento">Data de Nascimento</label>
                 <input type="date" id="nascimento" required>
@@ -60,22 +100,17 @@
                 <select id="cliente-select" required>
                     <option value="">Selecione o cliente...</option>
                 </select>
-
                 <label for="livro">Nome do Livro</label>
                 <input type="text" id="livro" placeholder="Digite o título do livro" required>
-
                 <div class="busca-livros">
                     <label for="filtro-livro">🔎 Filtrar lista de livros populares</label>
                     <input type="text" id="filtro-livro" placeholder="Pesquise na lista..." oninput="filtrarLivros()">
                     <div id="lista-livros" class="lista-livros"></div>
                 </div>
-
                 <label for="data-locacao">Data da Locação</label>
                 <input type="date" id="data-locacao" required onchange="calcularDevolucao()">
-
                 <label for="data-devolucao">Data de Devolução (7 dias)</label>
                 <input type="text" id="data-devolucao" readonly placeholder="Automático ao selecionar data">
-
                 <button type="submit" id="btn-confirmar-aluguel">✅ Confirmar Aluguel</button>
             </form>
             <button class="voltar" onclick="mostrar('inicio')">↩ Cancelar</button>
@@ -89,24 +124,36 @@
                 <input type="text" id="nome-cliente-devolucao" placeholder="Digite o nome do cliente">
                 <button onclick="buscarCliente()" style="margin-top: 15px; width: 100%;">🔍 Buscar</button>
             </div>
-
             <div id="lista-clientes-devolucao" style="display: none; margin: 15px 0;">
                 <p style="margin-bottom: 5px; font-weight: 600;">Selecione o cliente:</p>
                 <div id="opcoes-clientes" style="text-align: left;"></div>
             </div>
-
             <div id="info-devolucao" style="display: none;">
                 <p>📘 Livro alugado: <span id="livro-alugado"></span></p>
                 <button onclick="devolver()">📦 Confirmar Devolução</button>
             </div>
             <button class="voltar" onclick="mostrar('inicio')" style="margin-top: 20px;">↩ Voltar ao início</button>
         </div>
+
+        <!-- Tela: Histórico de Aluguéis -->
+        <div id="historico" class="tela">
+            <h2>📋 Histórico de Aluguéis</h2>
+            <div id="tabela-historico">
+                <p class="sem-dados">Carregando...</p>
+            </div>
+            <button class="voltar" onclick="mostrar('inicio')">↩ Voltar ao início</button>
+        </div>
     </div>
 
     <script>
-        const STORAGE_CLIENTES = 'biblioteca_clientes';
-        const STORAGE_ALUGUEIS = 'biblioteca_alugueis';
+        // ============ CONFIGURAÇÃO DO BANCO (IndexedDB com Dexie) ============
+        const db = new Dexie('BibliotecaDB');
+        db.version(1).stores({
+            clientes: '++id, cpf',
+            alugueis: '++id, cliente_id, status, livro'
+        });
 
+        // ============ LISTA DE LIVROS POPULARES ============
         const livrosPopulares = [
             "Dom Quixote - Miguel de Cervantes", "1984 - George Orwell", "Orgulho e Preconceito - Jane Austen",
             "O Senhor dos Anéis - J.R.R. Tolkien", "Cem Anos de Solidão - Gabriel García Márquez",
@@ -159,6 +206,7 @@
             "Ratos e Homens - John Steinbeck"
         ];
 
+        // ============ NOTIFICAÇÕES ============
         function notificar(mensagem, tipo = 'sucesso') {
             const notif = document.getElementById('notificacao');
             notif.textContent = mensagem;
@@ -167,40 +215,32 @@
             setTimeout(() => { notif.style.display = 'none'; }, 4000);
         }
 
-        function carregarClientes() {
-            return JSON.parse(localStorage.getItem(STORAGE_CLIENTES) || '[]');
+        // ============ MÁSCARA DE CPF ============
+        function mascararCPF(input) {
+            let cpf = input.value.replace(/\D/g, '');
+            if (cpf.length > 11) cpf = cpf.substring(0, 11);
+            let formatado = cpf;
+            if (cpf.length > 3) formatado = cpf.substring(0, 3) + '.' + cpf.substring(3);
+            if (cpf.length > 6) formatado = formatado.substring(0, 7) + '.' + cpf.substring(6);
+            if (cpf.length > 9) formatado = formatado.substring(0, 11) + '-' + cpf.substring(9);
+            input.value = formatado;
         }
 
-        function salvarClientes(clientes) {
-            localStorage.setItem(STORAGE_CLIENTES, JSON.stringify(clientes));
-        }
-
-        function carregarAlugueis() {
-            return JSON.parse(localStorage.getItem(STORAGE_ALUGUEIS) || '[]');
-        }
-
-        function salvarAlugueis(alugueis) {
-            localStorage.setItem(STORAGE_ALUGUEIS, JSON.stringify(alugueis));
-        }
-
+        // ============ NAVEGAÇÃO ============
         function mostrar(id) {
             document.querySelectorAll('.tela').forEach(tela => tela.classList.remove('ativa'));
             document.getElementById(id).classList.add('ativa');
             document.getElementById('notificacao').style.display = 'none';
 
             if (id === 'inicio') limparFormularios();
-            if (id === 'pedido') {
-                carregarSelectClientes();
-                const clientes = carregarClientes();
-                document.getElementById('sem-clientes').style.display = clientes.length === 0 ? 'block' : 'none';
-                document.getElementById('btn-confirmar-aluguel').disabled = clientes.length === 0;
-            }
+            if (id === 'pedido') carregarSelectClientes();
             if (id === 'devolucao') {
                 document.getElementById('nome-cliente-devolucao').value = '';
                 document.getElementById('info-devolucao').style.display = 'none';
                 document.getElementById('lista-clientes-devolucao').style.display = 'none';
                 document.getElementById('opcoes-clientes').innerHTML = '';
             }
+            if (id === 'historico') carregarHistorico();
         }
 
         function limparFormularios() {
@@ -215,28 +255,21 @@
             document.getElementById('sem-clientes').style.display = 'none';
         }
 
+        // ============ PESQUISA DE LIVROS ============
         function filtrarLivros() {
             const filtro = document.getElementById('filtro-livro').value.trim().toLowerCase();
             const listaDiv = document.getElementById('lista-livros');
             listaDiv.innerHTML = '';
-
             if (filtro === '') {
                 listaDiv.style.display = 'none';
                 return;
             }
-
-            // Função auxiliar para remover artigos iniciais do título
             function removerArtigos(titulo) {
                 return titulo.replace(/^(O |A |Os |As |Um |Uma |The )/i, '').trim();
             }
-
-            // Filtra todos os livros cujo título (sem artigo) contenha o filtro
             let resultados = livrosPopulares.filter(livro => {
-                const tituloLimpo = removerArtigos(livro).toLowerCase();
-                return tituloLimpo.includes(filtro);
+                return removerArtigos(livro).toLowerCase().includes(filtro);
             });
-
-            // Ordena: primeiro os que começam com o filtro, depois os demais
             resultados.sort((a, b) => {
                 const tituloA = removerArtigos(a).toLowerCase();
                 const tituloB = removerArtigos(b).toLowerCase();
@@ -244,23 +277,20 @@
                 const bComeca = tituloB.startsWith(filtro);
                 if (aComeca && !bComeca) return -1;
                 if (!aComeca && bComeca) return 1;
-                return tituloA.localeCompare(tituloB); // empate: ordem alfabética
+                return tituloA.localeCompare(tituloB);
             });
-
             if (resultados.length === 0) {
                 listaDiv.innerHTML = '<div class="sem-resultados">Nenhum livro encontrado</div>';
                 listaDiv.style.display = 'block';
                 return;
             }
-
             resultados.forEach(livro => {
                 const item = document.createElement('div');
                 item.className = 'item-livro';
-                // Destaca o texto buscado no título
                 const regex = new RegExp(`(${filtro})`, 'gi');
                 item.innerHTML = livro.replace(regex, '<strong>$1</strong>');
                 item.addEventListener('click', (e) => {
-                    e.stopPropagation(); // impede que o clique feche a lista antes de processar
+                    e.stopPropagation();
                     document.getElementById('livro').value = livro.split(' - ')[0];
                     document.getElementById('filtro-livro').value = '';
                     listaDiv.innerHTML = '';
@@ -278,33 +308,10 @@
             }
         });
 
-        function cadastrar() {
-            const nome = document.getElementById('nome').value.trim();
-            const cpf = document.getElementById('cpf').value.trim();
-            const nascimento = document.getElementById('nascimento').value;
-
-            if (!nome || !cpf || !nascimento) {
-                notificar('Preencha todos os campos.', 'erro');
-                return;
-            }
-
-            const clientes = carregarClientes();
-            if (clientes.some(c => c.cpf === cpf)) {
-                notificar('CPF já cadastrado.', 'erro');
-                return;
-            }
-
-            const novoCliente = { id: Date.now(), nome, cpf, nascimento };
-            clientes.push(novoCliente);
-            salvarClientes(clientes);
-            notificar(`Cliente ${nome} cadastrado com sucesso!`);
-            document.getElementById('form-cadastro').reset();
-            prepararPedido(novoCliente.id);
-        }
-
-        function carregarSelectClientes(selectedId = null) {
+        // ============ FUNÇÕES DO BANCO ============
+        async function carregarSelectClientes(selectedId = null) {
             const select = document.getElementById('cliente-select');
-            const clientes = carregarClientes();
+            const clientes = await db.clientes.toArray();
             select.innerHTML = '<option value="">Selecione o cliente...</option>';
             clientes.forEach(cliente => {
                 const option = document.createElement('option');
@@ -313,16 +320,43 @@
                 if (cliente.id == selectedId) option.selected = true;
                 select.appendChild(option);
             });
+            const semClientes = clientes.length === 0;
+            document.getElementById('sem-clientes').style.display = semClientes ? 'block' : 'none';
+            document.getElementById('btn-confirmar-aluguel').disabled = semClientes;
         }
 
-        function prepararPedido(clienteId = null) {
-            const clientes = carregarClientes();
+        async function cadastrar() {
+            const nome = document.getElementById('nome').value.trim();
+            const cpfBruto = document.getElementById('cpf').value.replace(/\D/g, '');
+            const nascimento = document.getElementById('nascimento').value;
+            if (!nome || !cpfBruto || !nascimento) {
+                notificar('Preencha todos os campos.', 'erro');
+                return;
+            }
+            if (cpfBruto.length !== 11) {
+                notificar('CPF inválido. Digite os 11 números.', 'erro');
+                return;
+            }
+            const cpfFormatado = cpfBruto.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            const existente = await db.clientes.where({ cpf: cpfFormatado }).first();
+            if (existente) {
+                notificar('CPF já cadastrado.', 'erro');
+                return;
+            }
+            const id = await db.clientes.put({ nome, cpf: cpfFormatado, nascimento });
+            notificar(`Cliente ${nome} cadastrado com sucesso!`);
+            document.getElementById('form-cadastro').reset();
+            prepararPedido(id);
+        }
+
+        async function prepararPedido(clienteId = null) {
+            const clientes = await db.clientes.toArray();
             if (clientes.length === 0 && !clienteId) {
                 notificar('Nenhum cliente cadastrado. Cadastre um novo cliente primeiro.', 'erro');
                 mostrar('aluguel-opcao');
                 return;
             }
-            carregarSelectClientes(clienteId);
+            await carregarSelectClientes(clienteId);
             mostrar('pedido');
         }
 
@@ -338,89 +372,70 @@
             }
         }
 
-        function confirmarAluguel() {
+        async function confirmarAluguel() {
             const clienteId = parseInt(document.getElementById('cliente-select').value);
             const livroTitulo = document.getElementById('livro').value.trim();
             const dataLocacao = document.getElementById('data-locacao').value;
             const dataDevolucao = document.getElementById('data-devolucao').value;
-
             if (!clienteId || !livroTitulo || !dataLocacao) {
                 notificar('Preencha todos os campos do pedido.', 'erro');
                 return;
             }
-
-            const clientes = carregarClientes();
-            const cliente = clientes.find(c => c.id === clienteId);
+            const cliente = await db.clientes.get(clienteId);
             if (!cliente) {
                 notificar('Cliente não encontrado.', 'erro');
                 return;
             }
-
-            const alugueis = carregarAlugueis();
-
-            // Verifica se o cliente já tem algum livro alugado
-            if (alugueis.some(a => a.clienteId === clienteId && a.status === 'ativo')) {
+            const aluguelAtivoCliente = await db.alugueis.where({ cliente_id: clienteId, status: 'ativo' }).first();
+            if (aluguelAtivoCliente) {
                 notificar(`O cliente ${cliente.nome} já possui um livro alugado. Devolva primeiro.`, 'erro');
                 return;
             }
-
-            // 🔥 NOVO: Verifica se o livro (título) já está alugado por outro cliente
-            const livroJaAlugado = alugueis.some(a => 
-                a.status === 'ativo' && 
-                a.livro.toLowerCase().trim() === livroTitulo.toLowerCase().trim()
-            );
+            const livroJaAlugado = await db.alugueis.where({ livro: livroTitulo, status: 'ativo' }).first();
             if (livroJaAlugado) {
-                notificar(`O livro "${livroTitulo}" já está alugado no momento. Tente outro título.`, 'erro');
+                notificar(`O livro "${livroTitulo}" já está alugado no momento.`, 'erro');
                 return;
             }
-
-            const novoAluguel = {
-                id: Date.now(),
-                clienteId,
+            await db.alugueis.put({
+                cliente_id: clienteId,
                 livro: livroTitulo,
-                dataLocacao,
-                dataDevolucaoPrevista: dataDevolucao,
+                data_locacao: dataLocacao,
+                data_devolucao_prevista: dataDevolucao,
                 status: 'ativo'
-            };
-            alugueis.push(novoAluguel);
-            salvarAlugueis(alugueis);
-
-            notificar(`Aluguel registrado! "${livroTitulo}" para ${cliente.nome}. Devolução em ${dataDevolucao}.`);
+            });
+            notificar(`Aluguel registrado! "${livroTitulo}" para ${cliente.nome}. Devolução prevista: ${dataDevolucao}`);
             document.getElementById('form-pedido').reset();
             document.getElementById('data-devolucao').value = '';
             mostrar('inicio');
         }
 
-        function buscarCliente() {
+        async function buscarCliente() {
             const nomeBusca = document.getElementById('nome-cliente-devolucao').value.trim().toLowerCase();
             if (nomeBusca === '') {
                 notificar('Digite um nome para buscar.', 'erro');
                 return;
             }
-
-            const clientes = carregarClientes();
-            const resultados = clientes.filter(c => c.nome.toLowerCase().includes(nomeBusca));
-
-            if (resultados.length === 0) {
+            const todosClientes = await db.clientes.toArray();
+            const clientes = todosClientes.filter(c => c.nome.toLowerCase().includes(nomeBusca));
+            if (clientes.length === 0) {
                 notificar('Cliente não encontrado.', 'erro');
                 document.getElementById('info-devolucao').style.display = 'none';
                 document.getElementById('lista-clientes-devolucao').style.display = 'none';
                 return;
             }
-
-            if (resultados.length === 1) {
-                exibirInfoDevolucao(resultados[0]);
+            if (clientes.length === 1) {
+                await exibirInfoDevolucao(clientes[0]);
                 document.getElementById('lista-clientes-devolucao').style.display = 'none';
             } else {
                 document.getElementById('info-devolucao').style.display = 'none';
                 const opcoesDiv = document.getElementById('opcoes-clientes');
                 opcoesDiv.innerHTML = '';
-                resultados.forEach(cliente => {
+                clientes.forEach(cliente => {
                     const btn = document.createElement('button');
                     btn.textContent = `${cliente.nome} (CPF: ${cliente.cpf})`;
                     btn.style.marginBottom = '8px';
-                    btn.addEventListener('click', () => {
-                        exibirInfoDevolucao(cliente);
+                    btn.addEventListener('click', async () => {
+                        await exibirInfoDevolucao(cliente);
                         document.getElementById('lista-clientes-devolucao').style.display = 'none';
                     });
                     opcoesDiv.appendChild(btn);
@@ -429,12 +444,10 @@
             }
         }
 
-        function exibirInfoDevolucao(cliente) {
-            const alugueis = carregarAlugueis();
-            const aluguel = alugueis.find(a => a.clienteId === cliente.id && a.status === 'ativo');
+        async function exibirInfoDevolucao(cliente) {
+            const aluguel = await db.alugueis.where({ cliente_id: cliente.id, status: 'ativo' }).first();
             const infoDiv = document.getElementById('info-devolucao');
             const livroSpan = document.getElementById('livro-alugado');
-
             if (aluguel) {
                 livroSpan.textContent = `"${aluguel.livro}" (Cliente: ${cliente.nome})`;
                 infoDiv.setAttribute('data-aluguel-id', aluguel.id);
@@ -445,27 +458,89 @@
             infoDiv.style.display = 'block';
         }
 
-        function devolver() {
+        async function devolver() {
             const infoDiv = document.getElementById('info-devolucao');
-            const aluguelId = infoDiv.getAttribute('data-aluguel-id');
+            const aluguelId = parseInt(infoDiv.getAttribute('data-aluguel-id'));
             if (!aluguelId) {
                 notificar('Nenhum empréstimo ativo para devolução.', 'erro');
                 return;
             }
-
-            const alugueis = carregarAlugueis();
-            const index = alugueis.findIndex(a => a.id == aluguelId);
-            if (index !== -1 && alugueis[index].status === 'ativo') {
-                alugueis[index].status = 'devolvido';
-                alugueis[index].dataDevolucaoReal = new Date().toISOString().split('T')[0];
-                salvarAlugueis(alugueis);
-                notificar(`Livro "${alugueis[index].livro}" devolvido com sucesso!`);
-                document.getElementById('nome-cliente-devolucao').value = '';
-                infoDiv.style.display = 'none';
-                infoDiv.removeAttribute('data-aluguel-id');
-                document.getElementById('lista-clientes-devolucao').style.display = 'none';
-            } else {
+            const aluguel = await db.alugueis.get(aluguelId);
+            if (!aluguel || aluguel.status !== 'ativo') {
                 notificar('Empréstimo não encontrado ou já devolvido.', 'erro');
+                return;
+            }
+            await db.alugueis.update(aluguelId, {
+                status: 'devolvido',
+                data_devolucao_real: new Date().toISOString().split('T')[0]
+            });
+            notificar(`Livro "${aluguel.livro}" devolvido com sucesso!`);
+            document.getElementById('nome-cliente-devolucao').value = '';
+            infoDiv.style.display = 'none';
+            infoDiv.removeAttribute('data-aluguel-id');
+            document.getElementById('lista-clientes-devolucao').style.display = 'none';
+        }
+
+        // ============ TELA DE HISTÓRICO ============
+        async function carregarHistorico() {
+            const container = document.getElementById('tabela-historico');
+            try {
+                // Carregar todos os aluguéis e clientes para cruzar dados
+                const [alugueis, clientes] = await Promise.all([
+                    db.alugueis.toArray(),
+                    db.clientes.toArray()
+                ]);
+
+                if (alugueis.length === 0) {
+                    container.innerHTML = '<p class="sem-dados">Nenhum aluguel registrado.</p>';
+                    return;
+                }
+
+                // Criar mapa de clientes para acesso rápido
+                const mapaClientes = {};
+                clientes.forEach(c => { mapaClientes[c.id] = c; });
+
+                // Ordenar por data de locação (mais recente primeiro)
+                alugueis.sort((a, b) => new Date(b.data_locacao) - new Date(a.data_locacao));
+
+                let tabela = `<table class="tabela-historico">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Livro</th>
+                            <th>Data Locação</th>
+                            <th>Prev. Devolução</th>
+                            <th>Status</th>
+                            <th>Devolução Real</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+                alugueis.forEach(aluguel => {
+                    const cliente = mapaClientes[aluguel.cliente_id] || { nome: 'Cliente removido' };
+                    const dataLocacao = aluguel.data_locacao.split('-').reverse().join('/');
+                    const statusClass = aluguel.status === 'ativo' ? 'status-ativo' : 'status-devolvido';
+                    const statusTexto = aluguel.status === 'ativo' ? 'Ativo' : 'Devolvido';
+                    const devolucaoReal = aluguel.data_devolucao_real 
+                        ? aluguel.data_devolucao_real.split('-').reverse().join('/') 
+                        : '-';
+
+                    tabela += `<tr>
+                        <td>${cliente.nome}</td>
+                        <td>${aluguel.livro}</td>
+                        <td>${dataLocacao}</td>
+                        <td>${aluguel.data_devolucao_prevista}</td>
+                        <td class="${statusClass}">${statusTexto}</td>
+                        <td>${devolucaoReal}</td>
+                    </tr>`;
+                });
+
+                tabela += '</tbody></table>';
+                container.innerHTML = tabela;
+
+            } catch (erro) {
+                console.error('Erro ao carregar histórico:', erro);
+                container.innerHTML = '<p class="sem-dados">Erro ao carregar dados.</p>';
             }
         }
     </script>
