@@ -48,15 +48,31 @@
     <div class="container">
         <div id="notificacao" class="notificacao" style="display: none;"></div>
 
-        <!-- Tela Inicial -->
-        <div id="inicio" class="tela ativa">
+        <!-- ===== TELA DE LOGIN (adicionada) ===== -->
+        <div id="login" class="tela ativa">
+            <h2>🔐 Acesso Restrito</h2>
+            <form id="form-login" onsubmit="event.preventDefault(); fazerLogin();">
+                <label for="usuario">Usuário</label>
+                <input type="text" id="usuario" placeholder="Digite seu usuário" required>
+
+                <label for="senha">Senha</label>
+                <input type="password" id="senha" placeholder="Digite sua senha" required>
+
+                <button type="submit">Entrar</button>
+            </form>
+            <p id="erro-login" style="color: #e74c3c; display: none; margin-top: 15px;">Usuário ou senha inválidos.</p>
+        </div>
+
+        <!-- Tela Inicial (agora sem classe "ativa" por padrão) -->
+        <div id="inicio" class="tela">
             <h1>📚 Biblioteca Central</h1>
-            <p>Selecione a operação desejada:</p>
+            <p>Bem-vindo(a), <span id="nome-usuario"></span>!</p>
             <div class="botoes">
                 <button onclick="mostrar('aluguel-opcao')">📖 Alugar Livro</button>
                 <button onclick="mostrar('devolucao')">📥 Devolver Livro</button>
                 <button onclick="mostrar('historico')">📋 Ver Aluguéis</button>
             </div>
+            <button class="voltar" onclick="logout()" style="margin-top: 20px;">🚪 Sair</button>
         </div>
 
         <!-- Tela: Novo ou Antigo? -->
@@ -88,15 +104,14 @@
             <button class="voltar" onclick="mostrar('aluguel-opcao')">↩ Voltar</button>
         </div>
 
-        <!-- Tela: Pedido de aluguel (com informações do livro) -->
+        <!-- Tela: Pedido de aluguel -->
         <div id="pedido" class="tela">
             <h2>Realizar Pedido</h2>
             <div id="sem-clientes" style="display: none; color: #8b7a6b; margin-bottom: 20px;">
                 ⚠️ Nenhum cliente cadastrado. Cadastre um novo cliente primeiro.
             </div>
-            
+
             <div class="pedido-wrapper">
-                <!-- Formulário (esquerda) -->
                 <form id="form-pedido" class="form-pedido" onsubmit="event.preventDefault(); confirmarAluguel();">
                     <label for="cliente-select">Cliente</label>
                     <select id="cliente-select" required>
@@ -116,7 +131,6 @@
                     <button type="submit" id="btn-confirmar-aluguel">✅ Confirmar Aluguel</button>
                 </form>
 
-                <!-- Painel de informações do livro (direita, dentro do container) -->
                 <div id="info-livro" class="info-livro">
                     <h3>📖 Informações</h3>
                     <div id="detalhes-livro">
@@ -127,7 +141,6 @@
                     <p id="info-placeholder" class="info-placeholder">Selecione um livro para ver os detalhes.</p>
                 </div>
             </div>
-
             <button class="voltar" onclick="mostrar('inicio')">↩ Cancelar</button>
         </div>
 
@@ -159,13 +172,12 @@
             <button class="voltar" onclick="mostrar('inicio')">↩ Voltar ao início</button>
         </div>
 
-        <!-- ===== CAPA FLUTUANTE (DENTRO DO CONTAINER) ===== -->
+        <!-- CAPA FLUTUANTE -->
         <div id="capa-flutuante" class="capa-flutuante">
             <img id="capa-livro" src="" alt="Capa do livro" style="display: none;">
             <p id="placeholder-capa" class="placeholder-capa">📚 Capa</p>
         </div>
-
-    </div> <!-- fim .container -->
+    </div>
 
     <script src="https://unpkg.com/dexie@3.2.3/dist/dexie.js"></script>
     <script src="../static/script.js"></script>

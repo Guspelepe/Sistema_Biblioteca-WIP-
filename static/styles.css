@@ -15,6 +15,7 @@
     box-sizing: border-box;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+
 body {
     background-image: url('../src/fundo.jpg');
     background-size: cover;
@@ -244,20 +245,7 @@ input[readonly] {
     background-color: #e74c3c;
 }
 
-@media (max-width: 480px) {
-    .container {
-        padding: 25px 20px;
-    }
-    h1 {
-        font-size: 1.8rem;
-    }
-    button {
-        padding: 16px 32px;
-        font-size: 0.9rem;
-    }
-}
-
-/* ===== LAYOUT DO PEDIDO (form + info lado a lado) ===== */
+/* ===== LAYOUT DO PEDIDO ===== */
 .pedido-wrapper {
     display: flex;
     gap: 40px;
@@ -271,7 +259,7 @@ input[readonly] {
 }
 
 .info-livro {
-    display: none; /* oculto por padrão */
+    display: none;
     background: #f9f5ed;
     padding: 20px;
     border-radius: 12px;
@@ -304,12 +292,11 @@ input[readonly] {
     margin-top: 10px;
 }
 
-/* Esconde placeholder quando houver dados */
 .info-livro.com-dados {
     display: block;
 }
 
-/* ===== CAPA FLUTUANTE ===== */
+/* ===== CAPA FLUTUANTE (regras unificadas) ===== */
 .capa-flutuante {
     position: fixed;
     right: 20px;
@@ -321,56 +308,9 @@ input[readonly] {
     text-align: center;
 }
 
-.tela#pedido.ativa ~ .capa-flutuante {
-    display: block;
-}
-
 .capa-flutuante img {
     max-width: 100%;
     max-height: 550px;
-    border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
-    display: none;
-}
-
-.capa-flutuante .placeholder-capa {
-    color: #5e503a;
-    font-style: italic;
-    font-size: 1rem;
-    background: rgba(255,255,255,0.8);
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-@media (max-width: 768px) {
-    .capa-flutuante {
-        position: relative;
-        right: auto;
-        top: auto;
-        transform: none;
-        width: 100%;
-        margin-top: 20px;
-        display: none;
-    }
-    .tela#pedido.ativa ~ .capa-flutuante {
-        display: block;
-        position: relative;
-        right: auto;
-        top: auto;
-        transform: none;
-        width: 100%;
-    }
-}
-
-/* Mostra a capa apenas quando a tela de pedido estiver ativa */
-.tela#pedido.ativa ~ .capa-flutuante {
-    display: block;
-}
-
-.capa-flutuante img {
-    max-width: 100%;
-    max-height: 450px;
     border-radius: 12px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.4);
     display: none; /* controlado pelo JS */
@@ -386,7 +326,26 @@ input[readonly] {
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-/* Responsivo */
+/* Exibe a capa flutuante apenas quando a tela de pedido está ativa */
+.tela#pedido.ativa ~ .capa-flutuante {
+    display: block;
+}
+
+/* ===== ESTILOS DO LOGIN ===== */
+#login {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+#login h2 {
+    margin-bottom: 30px;
+}
+
+#erro-login {
+    animation: fadeIn 0.3s ease;
+}
+
+/* ===== RESPONSIVO ===== */
 @media (max-width: 768px) {
     .pedido-wrapper {
         flex-direction: column;
@@ -395,15 +354,17 @@ input[readonly] {
         width: 100%;
         min-height: auto;
     }
+
     .capa-flutuante {
         position: relative;
         right: auto;
         top: auto;
         transform: none;
         width: 100%;
-        margin-bottom: 20px;
+        margin-top: 20px;
         display: none;
     }
+
     .tela#pedido.ativa ~ .capa-flutuante {
         display: block;
         position: relative;
@@ -411,5 +372,18 @@ input[readonly] {
         top: auto;
         transform: none;
         width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 25px 20px;
+    }
+    h1 {
+        font-size: 1.8rem;
+    }
+    button {
+        padding: 16px 32px;
+        font-size: 0.9rem;
     }
 }
