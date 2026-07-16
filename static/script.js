@@ -237,19 +237,44 @@ async function devolverComoUsuario() {
 
 async function carregarLivrosDisponiveis() {
     const container = document.getElementById('lista-disponiveis');
-    const alugueisAtivos = await db.alugueis.where({ status: 'ativo' }).toArray();
-    const livrosAlugados = alugueisAtivos.map(a => a.livro);
-    const disponiveis = livrosPopulares.filter(l => !livrosAlugados.includes(l));
+    container.innerHTML = ''; // limpa
 
-    if (disponiveis.length === 0) {
-        container.innerHTML = '<p class="sem-dados">Todos os livros estão alugados no momento.</p>';
+    // Busca todos os aluguéis ativos de uma vez
+    const alugueisAtivos = await db.alugueis.where({ status: 'ativo' }).toArray();
+    const livrosAlugados = new Set(alugueisAtivos.map(a => a.livro));
+
+    // Se não houver livros na lista (improvável)
+    if (livrosPopulares.length === 0) {
+        container.innerHTML = '<p class="sem-dados">Nenhum livro cadastrado.</p>';
         return;
     }
-    let html = '<ul style="list-style: none; padding-left: 0;">';
-    disponiveis.forEach(livro => {
-        html += `<li style="margin-bottom: 8px;">📖 ${livro}</li>`;
-    });
-    html += '</ul>';
+
+    // Cria um card para cada livro
+    let html = '<div class="grade-livros">';
+    for (const livro of livrosPopulares) {
+        const disponivel = !livrosAlugados.has(livro);
+        const statusClass = disponivel ? 'status-disponivel' : 'status-alugado';
+        const statusTexto = disponivel ? 'Disponível' : 'Alugado';
+
+        // Gera a imagem da capa (usa o mesmo caminho da capa flutuante)
+        const caminhoCapa = `../src/${encodeURIComponent(livro)}.jpg`;
+
+        html += `
+            <div class="card-livro">
+                <div class="capa-miniatura">
+                    <img src="${caminhoCapa}" 
+                         alt="Capa de ${livro}" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div class="placeholder-capa-mini" style="display:none;">📚</div>
+                </div>
+                <div class="info-livro-card">
+                    <h4>${livro}</h4>
+                    <span class="${statusClass}">${statusTexto}</span>
+                </div>
+            </div>
+        `;
+    }
+    html += '</div>';
     container.innerHTML = html;
 }
 
