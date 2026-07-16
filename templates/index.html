@@ -6,7 +6,6 @@
     <title>Biblioteca – Aluguel de Livros</title>
     <link rel="stylesheet" href="../static/styles.css">
     <style>
-        /* Estilos adicionais para a tela de histórico */
         .tabela-historico {
             width: 100%;
             border-collapse: collapse;
@@ -28,42 +27,37 @@
         .tabela-historico tr:hover td {
             background-color: #f5efe2;
         }
-        .status-ativo {
-            color: #27ae60;
-            font-weight: bold;
-        }
-        .status-devolvido {
-            color: #8b7a6b;
-            font-weight: bold;
-        }
-        .sem-dados {
-            text-align: center;
-            color: #8b7a6b;
-            padding: 20px;
-            font-style: italic;
-        }
+        .status-ativo { color: #27ae60; font-weight: bold; }
+        .status-devolvido { color: #8b7a6b; font-weight: bold; }
+        .sem-dados { text-align: center; color: #8b7a6b; padding: 20px; font-style: italic; }
     </style>
 </head>
 <body>
     <div class="container">
         <div id="notificacao" class="notificacao" style="display: none;"></div>
 
-        <!-- ===== TELA DE LOGIN (adicionada) ===== -->
+        <!-- ===== TELA DE LOGIN ===== -->
         <div id="login" class="tela ativa">
-            <h2>Acesso Restrito</h2>
+            <h2>Acesso à Biblioteca</h2>
             <form id="form-login" onsubmit="event.preventDefault(); fazerLogin();">
-                <label for="usuario">Usuário</label>
-                <input type="text" id="usuario" placeholder="Digite seu usuário" required>
+                <label>Perfil de acesso:</label>
+                <div style="margin: 10px 0; display: flex; gap: 20px;">
+                    <label><input type="radio" name="perfil" value="bibliotecario" checked> Bibliotecário</label>
+                    <label><input type="radio" name="perfil" value="usuario"> Usuário</label>
+                </div>
+
+                <label id="label-identificador" for="usuario">Usuário</label>
+                <input type="text" id="usuario" placeholder="Nome de bibliotecário" required>
 
                 <label for="senha">Senha</label>
                 <input type="password" id="senha" placeholder="Digite sua senha" required>
 
                 <button type="submit">Entrar</button>
             </form>
-            <p id="erro-login" style="color: #e74c3c; display: none; margin-top: 15px;">Usuário ou senha inválidos.</p>
+            <p id="erro-login" style="color: #e74c3c; display: none; margin-top: 15px;">Credenciais inválidas.</p>
         </div>
 
-        <!-- Tela Inicial (agora sem classe "ativa" por padrão) -->
+        <!-- ===== TELA INICIAL DO BIBLIOTECÁRIO ===== -->
         <div id="inicio" class="tela">
             <h1>Biblioteca Central</h1>
             <p>Bem-vindo(a), <span id="nome-usuario"></span>!</p>
@@ -75,7 +69,7 @@
             <button class="voltar" onclick="logout()" style="margin-top: 20px;">Sair</button>
         </div>
 
-        <!-- Tela: Novo ou Antigo? -->
+        <!-- ===== TELA: Novo ou Antigo? ===== -->
         <div id="aluguel-opcao" class="tela">
             <h2>Novo Aluguel</h2>
             <p>O cliente já possui cadastro?</p>
@@ -86,7 +80,7 @@
             </div>
         </div>
 
-        <!-- Tela: Cadastro de novo cliente -->
+        <!-- ===== TELA: Cadastro de novo cliente ===== -->
         <div id="cadastro-novo" class="tela">
             <h2>Cadastro de Cliente</h2>
             <form id="form-cadastro" onsubmit="event.preventDefault(); cadastrar();">
@@ -99,18 +93,20 @@
                 <label for="nascimento">Data de Nascimento</label>
                 <input type="date" id="nascimento" required>
 
+                <label for="senha-cliente">Senha de acesso</label>
+                <input type="password" id="senha-cliente" placeholder="Mínimo 4 caracteres" required>
+
                 <button type="submit">Cadastrar Cliente</button>
             </form>
             <button class="voltar" onclick="mostrar('aluguel-opcao')">↩ Voltar</button>
         </div>
 
-        <!-- Tela: Pedido de aluguel -->
+        <!-- ===== TELA: Pedido de aluguel ===== -->
         <div id="pedido" class="tela">
             <h2>Realizar Pedido</h2>
             <div id="sem-clientes" style="display: none; color: #8b7a6b; margin-bottom: 20px;">
                 Nenhum cliente cadastrado. Cadastre um novo cliente primeiro.
             </div>
-
             <div class="pedido-wrapper">
                 <form id="form-pedido" class="form-pedido" onsubmit="event.preventDefault(); confirmarAluguel();">
                     <label for="cliente-select">Cliente</label>
@@ -130,7 +126,6 @@
                     <input type="text" id="data-devolucao" readonly placeholder="Automático ao selecionar data">
                     <button type="submit" id="btn-confirmar-aluguel">✅ Confirmar Aluguel</button>
                 </form>
-
                 <div id="info-livro" class="info-livro">
                     <h3>Informações</h3>
                     <div id="detalhes-livro">
@@ -144,7 +139,7 @@
             <button class="voltar" onclick="mostrar('inicio')">↩ Cancelar</button>
         </div>
 
-        <!-- Tela: Devolução -->
+        <!-- ===== TELA: Devolução (Bibliotecário) ===== -->
         <div id="devolucao" class="tela">
             <h2>Devolução de Livro</h2>
             <div id="busca-cliente">
@@ -163,7 +158,7 @@
             <button class="voltar" onclick="mostrar('inicio')" style="margin-top: 20px;">↩ Voltar ao início</button>
         </div>
 
-        <!-- Tela: Histórico de Aluguéis -->
+        <!-- ===== TELA: Histórico Geral (Bibliotecário) ===== -->
         <div id="historico" class="tela">
             <h2>Histórico de Aluguéis</h2>
             <div id="tabela-historico">
@@ -172,12 +167,64 @@
             <button class="voltar" onclick="mostrar('inicio')">↩ Voltar ao início</button>
         </div>
 
+        <!-- ========== NOVAS TELAS DO USUÁRIO ========== -->
+
+        <!-- Painel do Usuário -->
+        <div id="painel-usuario" class="tela">
+            <h1>Olá, <span id="nome-leitor"></span>!</h1>
+            <div class="botoes">
+                <button onclick="mostrar('livros-disponiveis')">📚 Consultar Livros Disponíveis</button>
+                <button onclick="mostrar('meus-alugueis')">📋 Meus Aluguéis</button>
+            </div>
+            <div id="acoes-usuario" style="display: none; margin-top: 30px; background: #f5efe2; padding: 20px; border-radius: 8px;">
+                <h3>Você possui um livro alugado</h3>
+                <p><strong>Livro:</strong> <span id="livro-ativo-usuario"></span></p>
+                <p><strong>Devolução prevista:</strong> <span id="devolucao-prevista-usuario"></span></p>
+                <div class="botoes">
+                    <button onclick="renovarComoUsuario()">🔄 Renovar (mais 7 dias)</button>
+                    <button onclick="devolverComoUsuario()" class="voltar">📦 Devolver Agora</button>
+                </div>
+            </div>
+            <button class="voltar" onclick="logout()" style="margin-top: 30px;">Sair</button>
+        </div>
+
+        <!-- Livros Disponíveis -->
+        <div id="livros-disponiveis" class="tela">
+            <h2>Livros Disponíveis para Aluguel</h2>
+            <div id="lista-disponiveis" style="text-align: left; margin-top: 20px;"></div>
+            <button class="voltar" onclick="mostrar('painel-usuario')">↩ Voltar</button>
+        </div>
+
+        <!-- Meus Aluguéis -->
+        <div id="meus-alugueis" class="tela">
+            <h2>Meus Aluguéis</h2>
+            <div id="tabela-meus-alugueis"></div>
+            <button class="voltar" onclick="mostrar('painel-usuario')">↩ Voltar</button>
+        </div>
+
         <!-- CAPA FLUTUANTE -->
         <div id="capa-flutuante" class="capa-flutuante">
             <img id="capa-livro" src="" alt="Capa do livro" style="display: none;">
             <p id="placeholder-capa" class="placeholder-capa">📚 Capa</p>
         </div>
     </div>
+
+    <script>
+        // Alterna o placeholder conforme o perfil escolhido
+        document.querySelectorAll('input[name="perfil"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const label = document.getElementById('label-identificador');
+                const campo = document.getElementById('usuario');
+                if (this.value === 'bibliotecario') {
+                    label.textContent = 'Usuário';
+                    campo.placeholder = 'Nome de bibliotecário';
+                } else {
+                    label.textContent = 'CPF do leitor';
+                    campo.placeholder = '000.000.000-00';
+                }
+            });
+        });
+    </script>
 
     <script src="https://unpkg.com/dexie@3.2.3/dist/dexie.js"></script>
     <script src="../static/script.js"></script>

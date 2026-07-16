@@ -1,11 +1,22 @@
 // ============ CONFIGURAÇÃO DO BANCO (IndexedDB com Dexie) ============
 const db = new Dexie('BibliotecaDB');
-db.version(1).stores({
+
+// Versão 2 – adiciona suporte ao campo "senha" nos clientes (sem novo índice)
+db.version(2).stores({
     clientes: '++id, cpf',
     alugueis: '++id, cliente_id, status, livro'
 });
 
-// ============ LISTA DE LIVROS POPULARES ============
+// Atualiza clientes antigos que não possuem senha
+db.open().then(async () => {
+    const semSenha = await db.clientes.filter(c => !c.senha).toArray();
+    for (let c of semSenha) {
+        await db.clientes.update(c.id, { senha: '123456' });
+        console.warn(`Cliente "${c.nome}" recebeu senha padrão "123456".`);
+    }
+});
+
+// ============ LISTA DE LIVROS POPULARES (mantida igual) ============
 const livrosPopulares = [
     "1984 - George Orwell", "A Bagaceira - José Américo de Almeida", "A Culpa é das Estrelas - John Green",
     "A Dança da Morte - Stephen King", "A Divina Comédia - Dante Alighieri", "A Garota no Trem - Paula Hawkins",
@@ -47,38 +58,58 @@ const livrosPopulares = [
 // ============ INFORMAÇÕES DOS LIVROS ============
 const livrosInfo = {
     "1984 - George Orwell": { autor: "George Orwell", ano: 1949, editora: "Companhia das Letras" },
-    // ... (todos os dados existentes, mantidos iguais ao original) ...
+    "A Bagaceira - José Américo de Almeida": { autor: "José Américo de Almeida", ano: 1928, editora: "Record" },
+    // ... (mantenha todos os dados existentes aqui) ...
     "Vidas Secas - Graciliano Ramos": { autor: "Graciliano Ramos", ano: 1938, editora: "Record" }
 };
 
-// ============ AUTENTICAÇÃO (NOVO) ============
+// ============ AUTENTICAÇÃO ============
 const BIBLIOTECARIOS = [
     { usuario: "ana", senha: "ana123" },
     { usuario: "carlos", senha: "carlos456" }
 ];
 
-function verificarLogin(usuario, senha) {
-    return BIBLIOTECARIOS.some(b => b.usuario === usuario && b.senha === senha);
-}
-
-function fazerLogin() {
+async function fazerLogin() {
     const usuario = document.getElementById('usuario').value.trim();
     const senha = document.getElementById('senha').value;
+    const perfil = document.querySelector('input[name="perfil"]:checked').value;
 
-    if (verificarLogin(usuario, senha)) {
-        sessionStorage.setItem('logado', 'true');
-        sessionStorage.setItem('usuario', usuario);
-        document.getElementById('erro-login').style.display = 'none';
-        document.getElementById('form-login').reset();
-        mostrar('inicio');
-    } else {
-        document.getElementById('erro-login').style.display = 'block';
+    if (perfil === 'bibliotecario') {
+        if (BIBLIOTECARIOS.some(b => b.usuario === usuario && b.senha === senha)) {
+            sessionStorage.setItem('logado', 'true');
+            sessionStorage.setItem('perfil', 'bibliotecario');
+            sessionStorage.setItem('usuario', usuario);
+            document.getElementById('erro-login').style.display = 'none';
+            document.getElementById('form-login').reset();
+            mostrar('inicio');
+        } else {
+            document.getElementById('erro-login').style.display = 'block';
+        }
+    } else if (perfil === 'usuario') {
+        const cpfLimpo = usuario.replace(/\D/g, '');
+        if (cpfLimpo.length !== 11) {
+            document.getElementById('erro-login').style.display = 'block';
+            return;
+        }
+        const cpfFormatado = cpfLimpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        const cliente = await db.clientes.where({ cpf: cpfFormatado }).first();
+        if (cliente && cliente.senha === senha) {
+            sessionStorage.setItem('logado', 'true');
+            sessionStorage.setItem('perfil', 'usuario');
+            sessionStorage.setItem('usuario', cliente.nome);
+            sessionStorage.setItem('usuarioId', cliente.id);
+            sessionStorage.setItem('cpf', cliente.cpf);
+            document.getElementById('erro-login').style.display = 'none';
+            document.getElementById('form-login').reset();
+            mostrar('painel-usuario');
+        } else {
+            document.getElementById('erro-login').style.display = 'block';
+        }
     }
 }
 
 function logout() {
-    sessionStorage.removeItem('logado');
-    sessionStorage.removeItem('usuario');
+    sessionStorage.clear();
     document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
     document.getElementById('login').classList.add('ativa');
 }
@@ -103,12 +134,20 @@ function mascararCPF(input) {
     input.value = formatado;
 }
 
-// ============ NAVEGAÇÃO (MODIFICADA COM VERIFICAÇÃO DE LOGIN) ============
+// ============ NAVEGAÇÃO (RESTRITA POR PERFIL) ============
 function mostrar(id) {
     const logado = sessionStorage.getItem('logado') === 'true';
+    const perfil = sessionStorage.getItem('perfil');
     if (!logado && id !== 'login') {
         document.getElementById('login').classList.add('ativa');
         return;
+    }
+
+    // Usuário comum não pode acessar telas do bibliotecário
+    const telasProibidas = ['inicio', 'aluguel-opcao', 'cadastro-novo', 'pedido', 'devolucao'];
+    if (perfil === 'usuario' && telasProibidas.includes(id)) {
+        notificar('Acesso restrito.', 'erro');
+        id = 'painel-usuario';
     }
 
     document.querySelectorAll('.tela').forEach(tela => tela.classList.remove('ativa'));
@@ -117,10 +156,14 @@ function mostrar(id) {
 
     if (id === 'inicio') {
         limparFormularios();
-        const nome = sessionStorage.getItem('usuario');
-        const span = document.getElementById('nome-usuario');
-        if (span) span.textContent = nome;
+        document.getElementById('nome-usuario').textContent = sessionStorage.getItem('usuario');
     }
+    if (id === 'painel-usuario') {
+        document.getElementById('nome-leitor').textContent = sessionStorage.getItem('usuario');
+        carregarPainelUsuario();
+    }
+    if (id === 'livros-disponiveis') carregarLivrosDisponiveis();
+    if (id === 'meus-alugueis') carregarMeusAlugueis();
     if (id === 'pedido') carregarSelectClientes();
     if (id === 'devolucao') {
         document.getElementById('nome-cliente-devolucao').value = '';
@@ -143,62 +186,104 @@ function limparFormularios() {
     document.getElementById('sem-clientes').style.display = 'none';
 }
 
-// ============ PESQUISA DE LIVROS ============
-function filtrarLivros() {
-    const filtro = document.getElementById('filtro-livro').value.trim().toLowerCase();
-    const listaDiv = document.getElementById('lista-livros');
-    listaDiv.innerHTML = '';
-    if (filtro === '') {
-        listaDiv.style.display = 'none';
-        return;
+// ============ PAINEL DO USUÁRIO ============
+async function carregarPainelUsuario() {
+    const idUsuario = parseInt(sessionStorage.getItem('usuarioId'));
+    const aluguelAtivo = await db.alugueis.where({ cliente_id: idUsuario, status: 'ativo' }).first();
+    const acoesDiv = document.getElementById('acoes-usuario');
+    if (aluguelAtivo) {
+        acoesDiv.style.display = 'block';
+        document.getElementById('livro-ativo-usuario').textContent = aluguelAtivo.livro;
+        document.getElementById('devolucao-prevista-usuario').textContent = aluguelAtivo.data_devolucao_prevista;
+        acoesDiv.setAttribute('data-aluguel-id', aluguelAtivo.id);
+    } else {
+        acoesDiv.style.display = 'none';
+        acoesDiv.removeAttribute('data-aluguel-id');
     }
-    function removerArtigos(titulo) {
-        return titulo.replace(/^(O |A |Os |As |Um |Uma |The )/i, '').trim();
-    }
-    let resultados = livrosPopulares.filter(livro => {
-        return removerArtigos(livro).toLowerCase().includes(filtro);
-    });
-    resultados.sort((a, b) => {
-        const tituloA = removerArtigos(a).toLowerCase();
-        const tituloB = removerArtigos(b).toLowerCase();
-        const aComeca = tituloA.startsWith(filtro);
-        const bComeca = tituloB.startsWith(filtro);
-        if (aComeca && !bComeca) return -1;
-        if (!aComeca && bComeca) return 1;
-        return tituloA.localeCompare(tituloB);
-    });
-    if (resultados.length === 0) {
-        listaDiv.innerHTML = '<div class="sem-resultados">Nenhum livro encontrado</div>';
-        listaDiv.style.display = 'block';
-        return;
-    }
-    resultados.forEach(livro => {
-        const item = document.createElement('div');
-        item.className = 'item-livro';
-        const regex = new RegExp(`(${filtro})`, 'gi');
-        item.innerHTML = livro.replace(regex, '<strong>$1</strong>');
-        item.addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.getElementById('livro').value = livro.split(' - ')[0];
-            document.getElementById('filtro-livro').value = '';
-            listaDiv.innerHTML = '';
-            listaDiv.style.display = 'none';
-            atualizarCapa(livro);
-            atualizarInfoLivro(livro);
-        });
-        listaDiv.appendChild(item);
-    });
-    listaDiv.style.display = 'block';
 }
 
-document.addEventListener('click', function(event) {
-    const listaDiv = document.getElementById('lista-livros');
-    if (!event.target.closest('.busca-livros')) {
-        listaDiv.style.display = 'none';
+async function renovarComoUsuario() {
+    const aluguelId = parseInt(document.getElementById('acoes-usuario').getAttribute('data-aluguel-id'));
+    if (!aluguelId) return;
+    const aluguel = await db.alugueis.get(aluguelId);
+    if (!aluguel || aluguel.status !== 'ativo') {
+        notificar('Nenhum empréstimo ativo.', 'erro');
+        return;
     }
-});
+    const partes = aluguel.data_devolucao_prevista.split('/');
+    const dataAtual = new Date(partes[2], partes[1] - 1, partes[0]);
+    dataAtual.setDate(dataAtual.getDate() + 7);
+    const novaData = dataAtual.toLocaleDateString('pt-BR');
+    await db.alugueis.update(aluguelId, { data_devolucao_prevista: novaData });
+    notificar(`Empréstimo renovado até ${novaData}.`);
+    carregarPainelUsuario();
+}
 
-// ============ FUNÇÕES DO BANCO (mantidas iguais) ============
+async function devolverComoUsuario() {
+    const aluguelId = parseInt(document.getElementById('acoes-usuario').getAttribute('data-aluguel-id'));
+    if (!aluguelId) return;
+    const aluguel = await db.alugueis.get(aluguelId);
+    if (!aluguel || aluguel.status !== 'ativo') {
+        notificar('Nenhum empréstimo ativo.', 'erro');
+        return;
+    }
+    await db.alugueis.update(aluguelId, {
+        status: 'devolvido',
+        data_devolucao_real: new Date().toISOString().split('T')[0]
+    });
+    notificar(`Livro "${aluguel.livro}" devolvido com sucesso.`);
+    carregarPainelUsuario();
+}
+
+async function carregarLivrosDisponiveis() {
+    const container = document.getElementById('lista-disponiveis');
+    const alugueisAtivos = await db.alugueis.where({ status: 'ativo' }).toArray();
+    const livrosAlugados = alugueisAtivos.map(a => a.livro);
+    const disponiveis = livrosPopulares.filter(l => !livrosAlugados.includes(l));
+
+    if (disponiveis.length === 0) {
+        container.innerHTML = '<p class="sem-dados">Todos os livros estão alugados no momento.</p>';
+        return;
+    }
+    let html = '<ul style="list-style: none; padding-left: 0;">';
+    disponiveis.forEach(livro => {
+        html += `<li style="margin-bottom: 8px;">📖 ${livro}</li>`;
+    });
+    html += '</ul>';
+    container.innerHTML = html;
+}
+
+async function carregarMeusAlugueis() {
+    const idUsuario = parseInt(sessionStorage.getItem('usuarioId'));
+    const container = document.getElementById('tabela-meus-alugueis');
+    const alugueis = await db.alugueis.where({ cliente_id: idUsuario }).toArray();
+
+    if (alugueis.length === 0) {
+        container.innerHTML = '<p class="sem-dados">Você não possui histórico de aluguéis.</p>';
+        return;
+    }
+    alugueis.sort((a, b) => new Date(b.data_locacao) - new Date(a.data_locacao));
+
+    let tabela = `<table class="tabela-historico">
+        <thead><tr><th>Livro</th><th>Data Locação</th><th>Prev. Devolução</th><th>Status</th><th>Devolução Real</th></tr></thead><tbody>`;
+    alugueis.forEach(aluguel => {
+        const dataLocacao = aluguel.data_locacao.split('-').reverse().join('/');
+        const statusClass = aluguel.status === 'ativo' ? 'status-ativo' : 'status-devolvido';
+        const statusTexto = aluguel.status === 'ativo' ? 'Ativo' : 'Devolvido';
+        const devReal = aluguel.data_devolucao_real ? aluguel.data_devolucao_real.split('-').reverse().join('/') : '-';
+        tabela += `<tr>
+            <td>${aluguel.livro}</td>
+            <td>${dataLocacao}</td>
+            <td>${aluguel.data_devolucao_prevista}</td>
+            <td class="${statusClass}">${statusTexto}</td>
+            <td>${devReal}</td>
+        </tr>`;
+    });
+    tabela += '</tbody></table>';
+    container.innerHTML = tabela;
+}
+
+// ============ FUNÇÕES DE BIBLIOTECÁRIO (MANTIDAS) ============
 async function carregarSelectClientes(selectedId = null) {
     const select = document.getElementById('cliente-select');
     const clientes = await db.clientes.toArray();
@@ -219,8 +304,10 @@ async function cadastrar() {
     const nome = document.getElementById('nome').value.trim();
     const cpfBruto = document.getElementById('cpf').value.replace(/\D/g, '');
     const nascimento = document.getElementById('nascimento').value;
-    if (!nome || !cpfBruto || !nascimento) {
-        notificar('Preencha todos os campos.', 'erro');
+    const senha = document.getElementById('senha-cliente').value;
+
+    if (!nome || !cpfBruto || !nascimento || !senha) {
+        notificar('Preencha todos os campos, incluindo a senha.', 'erro');
         return;
     }
     if (cpfBruto.length !== 11) {
@@ -233,7 +320,7 @@ async function cadastrar() {
         notificar('CPF já cadastrado.', 'erro');
         return;
     }
-    const id = await db.clientes.put({ nome, cpf: cpfFormatado, nascimento });
+    const id = await db.clientes.put({ nome, cpf: cpfFormatado, nascimento, senha });
     notificar(`Cliente ${nome} cadastrado com sucesso!`);
     document.getElementById('form-cadastro').reset();
     prepararPedido(id);
@@ -371,7 +458,6 @@ async function devolver() {
     document.getElementById('lista-clientes-devolucao').style.display = 'none';
 }
 
-// ============ TELA DE HISTÓRICO ============
 async function carregarHistorico() {
     const container = document.getElementById('tabela-historico');
     try {
@@ -384,34 +470,18 @@ async function carregarHistorico() {
             container.innerHTML = '<p class="sem-dados">Nenhum aluguel registrado.</p>';
             return;
         }
-
         const mapaClientes = {};
         clientes.forEach(c => { mapaClientes[c.id] = c; });
-
         alugueis.sort((a, b) => new Date(b.data_locacao) - new Date(a.data_locacao));
 
         let tabela = `<table class="tabela-historico">
-            <thead>
-                <tr>
-                    <th>Cliente</th>
-                    <th>Livro</th>
-                    <th>Data Locação</th>
-                    <th>Prev. Devolução</th>
-                    <th>Status</th>
-                    <th>Devolução Real</th>
-                </tr>
-            </thead>
-            <tbody>`;
-
+            <thead><tr><th>Cliente</th><th>Livro</th><th>Data Locação</th><th>Prev. Devolução</th><th>Status</th><th>Devolução Real</th></tr></thead><tbody>`;
         alugueis.forEach(aluguel => {
             const cliente = mapaClientes[aluguel.cliente_id] || { nome: 'Cliente removido' };
             const dataLocacao = aluguel.data_locacao.split('-').reverse().join('/');
             const statusClass = aluguel.status === 'ativo' ? 'status-ativo' : 'status-devolvido';
             const statusTexto = aluguel.status === 'ativo' ? 'Ativo' : 'Devolvido';
-            const devolucaoReal = aluguel.data_devolucao_real 
-                ? aluguel.data_devolucao_real.split('-').reverse().join('/') 
-                : '-';
-
+            const devolucaoReal = aluguel.data_devolucao_real ? aluguel.data_devolucao_real.split('-').reverse().join('/') : '-';
             tabela += `<tr>
                 <td>${cliente.nome}</td>
                 <td>${aluguel.livro}</td>
@@ -421,30 +491,81 @@ async function carregarHistorico() {
                 <td>${devolucaoReal}</td>
             </tr>`;
         });
-
         tabela += '</tbody></table>';
         container.innerHTML = tabela;
-
     } catch (erro) {
         console.error('Erro ao carregar histórico:', erro);
         container.innerHTML = '<p class="sem-dados">Erro ao carregar dados.</p>';
     }
 }
 
-// ============ CAPA E INFORMAÇÕES (mantido) ============
+// ============ PESQUISA DE LIVROS ============
+function filtrarLivros() {
+    const filtro = document.getElementById('filtro-livro').value.trim().toLowerCase();
+    const listaDiv = document.getElementById('lista-livros');
+    listaDiv.innerHTML = '';
+    if (filtro === '') {
+        listaDiv.style.display = 'none';
+        return;
+    }
+    function removerArtigos(titulo) {
+        return titulo.replace(/^(O |A |Os |As |Um |Uma |The )/i, '').trim();
+    }
+    let resultados = livrosPopulares.filter(livro => {
+        return removerArtigos(livro).toLowerCase().includes(filtro);
+    });
+    resultados.sort((a, b) => {
+        const tituloA = removerArtigos(a).toLowerCase();
+        const tituloB = removerArtigos(b).toLowerCase();
+        const aComeca = tituloA.startsWith(filtro);
+        const bComeca = tituloB.startsWith(filtro);
+        if (aComeca && !bComeca) return -1;
+        if (!aComeca && bComeca) return 1;
+        return tituloA.localeCompare(tituloB);
+    });
+    if (resultados.length === 0) {
+        listaDiv.innerHTML = '<div class="sem-resultados">Nenhum livro encontrado</div>';
+        listaDiv.style.display = 'block';
+        return;
+    }
+    resultados.forEach(livro => {
+        const item = document.createElement('div');
+        item.className = 'item-livro';
+        const regex = new RegExp(`(${filtro})`, 'gi');
+        item.innerHTML = livro.replace(regex, '<strong>$1</strong>');
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('livro').value = livro.split(' - ')[0];
+            document.getElementById('filtro-livro').value = '';
+            listaDiv.innerHTML = '';
+            listaDiv.style.display = 'none';
+            atualizarCapa(livro);
+            atualizarInfoLivro(livro);
+        });
+        listaDiv.appendChild(item);
+    });
+    listaDiv.style.display = 'block';
+}
+
+document.addEventListener('click', function(event) {
+    const listaDiv = document.getElementById('lista-livros');
+    if (!event.target.closest('.busca-livros')) {
+        listaDiv.style.display = 'none';
+    }
+});
+
+// ============ CAPA E INFORMAÇÕES ============
 let timeoutCapa = null;
 
 function atualizarCapa(titulo) {
     const img = document.getElementById('capa-livro');
     const placeholder = document.getElementById('placeholder-capa');
-    
     if (!titulo) {
         img.style.display = 'none';
         placeholder.style.display = 'block';
         placeholder.textContent = '📚 Capa';
         return;
     }
-
     const caminho = `../src/${titulo}.jpg`;
     img.onload = () => {
         img.style.display = 'block';
@@ -490,12 +611,11 @@ function atualizarInfoLivro(tituloCompleto) {
     }
 }
 
-// Evento de digitação para busca de capa (mantido)
 document.getElementById('livro').addEventListener('input', function() {
     clearTimeout(timeoutCapa);
     const termo = this.value.trim();
     timeoutCapa = setTimeout(() => {
-        const livroEncontrado = livrosPopulares.find(livro => 
+        const livroEncontrado = livrosPopulares.find(livro =>
             livro.toLowerCase().startsWith(termo.toLowerCase())
         );
         if (livroEncontrado) {
@@ -508,15 +628,20 @@ document.getElementById('livro').addEventListener('input', function() {
     }, 500);
 });
 
-// ============ VERIFICAÇÃO DE SESSÃO AO CARREGAR A PÁGINA (NOVO) ============
+// ============ VERIFICAÇÃO DE SESSÃO ============
 window.addEventListener('DOMContentLoaded', () => {
     const logado = sessionStorage.getItem('logado') === 'true';
+    const perfil = sessionStorage.getItem('perfil');
     if (logado) {
         document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
-        document.getElementById('inicio').classList.add('ativa');
-        const nome = sessionStorage.getItem('usuario');
-        const span = document.getElementById('nome-usuario');
-        if (span) span.textContent = nome;
+        if (perfil === 'bibliotecario') {
+            document.getElementById('inicio').classList.add('ativa');
+            document.getElementById('nome-usuario').textContent = sessionStorage.getItem('usuario');
+        } else if (perfil === 'usuario') {
+            document.getElementById('painel-usuario').classList.add('ativa');
+            document.getElementById('nome-leitor').textContent = sessionStorage.getItem('usuario');
+            carregarPainelUsuario();
+        }
     } else {
         document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
         document.getElementById('login').classList.add('ativa');
