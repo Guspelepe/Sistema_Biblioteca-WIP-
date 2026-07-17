@@ -304,29 +304,42 @@ async function devolverComoUsuario() {
     carregarPainelUsuario();
 }
 
+// ============ LISTAGEM DE LIVROS COM CAPA E STATUS (CORRIGIDO) ============
 async function carregarLivrosDisponiveis() {
     const container = document.getElementById('lista-disponiveis');
     container.innerHTML = '';
-    const livros = await db.livros.toArray();
-    const alugueisAtivos = await db.alugueis.where({ status: 'ativo' }).toArray();
-    const livrosAlugados = new Set(alugueisAtivos.map(a => a.livro));
 
-    if (livros.length === 0) {
+    // Busca todos os aluguéis ativos
+    const alugueisAtivos = await db.alugueis.where({ status: 'ativo' }).toArray();
+
+    // Cria um Set com os títulos dos livros alugados (apenas a parte antes do " - ")
+    const livrosAlugados = new Set(
+        alugueisAtivos.map(a => a.livro.split(' - ')[0].trim().toLowerCase())
+    );
+
+    // Pega a lista de livros cadastrados no banco (tabela livros)
+    const livrosDB = await db.livros.toArray();
+
+    if (livrosDB.length === 0) {
         container.innerHTML = '<p class="sem-dados">Nenhum livro cadastrado.</p>';
         return;
     }
 
     let html = '<div class="grade-livros">';
-    for (const livro of livros) {
-        const disponivel = !livrosAlugados.has(livro.titulo);
+    for (const livro of livrosDB) {
+        // Extrai o título simplificado (antes do " - ") e normaliza
+        const tituloSimplificado = livro.titulo.split(' - ')[0].trim().toLowerCase();
+        const disponivel = !livrosAlugados.has(tituloSimplificado);
         const statusClass = disponivel ? 'status-disponivel' : 'status-alugado';
         const statusTexto = disponivel ? 'Disponível' : 'Alugado';
+
         const caminhoCapa = `../src/${encodeURIComponent(livro.titulo)}.jpg`;
 
         html += `
             <div class="card-livro">
                 <div class="capa-miniatura">
-                    <img src="${caminhoCapa}" alt="Capa de ${livro.titulo}" 
+                    <img src="${caminhoCapa}" 
+                         alt="Capa de ${livro.titulo}" 
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <div class="placeholder-capa-mini" style="display:none;">📚</div>
                 </div>
@@ -334,7 +347,8 @@ async function carregarLivrosDisponiveis() {
                     <h4>${livro.titulo}</h4>
                     <span class="${statusClass}">${statusTexto}</span>
                 </div>
-            </div>`;
+            </div>
+        `;
     }
     html += '</div>';
     container.innerHTML = html;
@@ -755,7 +769,7 @@ function atualizarCapa(titulo) {
         placeholder.textContent = '📚 Capa';
         return;
     }
-    const caminho = `../src/${titulo}.jpg`;
+    const caminho = `../src/${encodeURIComponent(titulo)}.jpg`;
     img.onload = () => {
         img.style.display = 'block';
         placeholder.style.display = 'none';
