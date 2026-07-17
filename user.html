@@ -3,58 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Usuário</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .card {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            text-align: center;
-            max-width: 500px;
-        }
-        h1 { color: #2c3e50; }
-        button {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 10px 30px;
-            border-radius: 6px;
-            font-size: 1rem;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-        button:hover { background: #c0392b; }
-    </style>
+    <title>Minha Biblioteca</title>
+    <link rel="stylesheet" href="static/css/style-user.css">
 </head>
 <body>
-    <div class="card">
-        <h1>👋 Olá, <span id="nome-usuario"></span>!</h1>
-        <p>Bem-vindo ao painel do usuário.</p>
-        <p style="color: #888; font-size: 0.9rem;">Em breve com todas as funcionalidades.</p>
-        <button onclick="logout()">Sair</button>
+    <div class="user-container">
+        <!-- MENU LATERAL -->
+        <aside class="sidebar-user">
+            <div class="user-header">
+                <div class="avatar" id="avatar-container">
+                    <img id="user-avatar" src="static/src/default-avatar.png" alt="Avatar">
+                </div>
+                <span class="user-name" id="user-nome">Carregando...</span>
+                <span class="user-apelido" id="user-apelido"></span>
+            </div>
+            <nav class="menu-user">
+                <ul>
+                    <li><a href="#" data-section="inicio" class="active">Página Inicial</a></li>
+                    <li><a href="#" data-section="biblioteca">Biblioteca</a></li>
+                    <li><a href="#" data-section="meus-livros">Meus Livros</a></li>
+                    <li><a href="#" data-section="perfil">Perfil</a></li>
+                    <li><a href="#" data-section="comunidade">Comunidade</a></li>
+                    <li><a href="#" id="logout-user">Sair</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <main class="main-user">
+            <header class="topbar-user">
+                <h1 id="section-title-user">Página Inicial</h1>
+                <div class="topbar-actions-user"></div>
+            </header>
+            <div class="content-user" id="content-user">
+                <p>Bem-vindo! Selecione uma opção no menu.</p>
+            </div>
+        </main>
     </div>
 
-    <script>
-        // Verifica se o usuário está logado
-        if (sessionStorage.getItem('perfil') !== 'usuario') {
-            window.location.href = 'index.html';
-        }
-        document.getElementById('nome-usuario').textContent = sessionStorage.getItem('usuario');
+    <!-- NOTIFICAÇÃO -->
+    <div id="notificacao-user" class="notificacao-user" style="display:none;"></div>
 
-        function logout() {
-            sessionStorage.clear();
-            window.location.href = 'index.html';
-        }
-    </script>
+    <script src="https://unpkg.com/dexie@3.2.3/dist/dexie.js"></script>
+    <script src="static/js/db.js"></script>
+    <script src="static/js/user-app.js"></script>
 </body>
 </html>
