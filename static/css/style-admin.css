@@ -1,0 +1,409 @@
+/* RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ===== TEMAS ===== */
+:root {
+    --bg-sidebar: #f0f2f5;   /* ou #ffffff se quiser sidebar branca */
+    --bg-main: #ffffff;      /* fundo principal BRANCO */
+    --bg-card: #ffffff;      /* cards BRANCOS */
+    --text-primary: #2c3e50;
+    --text-secondary: #5d6d7e;
+    --border-color: #dce1e6;
+    --shadow: 0 2px 6px rgba(0,0,0,0.06);
+    --hover-bg: #f0f2f5;
+    --table-header: #f0f2f5;
+    --input-bg: #ffffff;
+    --input-border: #dce1e6;
+    --btn-primary: #3498db;
+    --btn-primary-hover: #2980b9;
+    --btn-danger: #e74c3c;
+    --btn-danger-hover: #c0392b;
+    --notif-bg: #2ecc71;
+    --notif-error: #e74c3c;
+}
+
+body.tema-escuro {
+    --bg-sidebar: #1e272e;
+    --bg-main: #2f3640;
+    --bg-card: #353b48;
+    --text-primary: #f5f6fa;
+    --text-secondary: #dcdde1;
+    --border-color: #4a4f5a;
+    --shadow: 0 2px 6px rgba(0,0,0,0.4);
+    --hover-bg: #3d4451;
+    --table-header: #3d4451;
+    --input-bg: #2f3640;
+    --input-border: #4a4f5a;
+    --btn-primary: #3498db;
+    --btn-primary-hover: #5dade2;
+    --btn-danger: #e74c3c;
+    --btn-danger-hover: #ec7063;
+    --notif-bg: #27ae60;
+    --notif-error: #e74c3c;
+}
+
+/* ===== ESTRUTURA ===== */
+body {
+    background: var(--bg-main);
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+}
+
+.admin-container {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+    width: 260px;
+    min-width: 260px;
+    background: var(--bg-sidebar);
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border-color);
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    padding: 24px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h2 {
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 1.3rem;
+    margin: 0;
+}
+
+.sidebar-header .user-name {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    display: block;
+    margin-top: 4px;
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 16px 0;
+}
+
+.sidebar-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-nav li {
+    margin-bottom: 2px;
+}
+
+.sidebar-nav a {
+    display: block;
+    padding: 10px 20px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: background 0.2s, color 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.sidebar-nav a:hover,
+.sidebar-nav a.active {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+    border-left-color: var(--btn-primary);
+}
+
+.sidebar-nav #logout-btn {
+    margin-top: 30px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 16px;
+    color: var(--btn-danger);
+}
+
+.sidebar-nav #logout-btn:hover {
+    background: var(--hover-bg);
+    color: var(--btn-danger-hover);
+    border-left-color: var(--btn-danger);
+}
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-main);
+    height: 100vh;
+    overflow: hidden;
+    min-width: 0; /* evita estourar */
+}
+
+/* TOPBAR – sem título, só o botão */
+.topbar {
+    background: var(--bg-main);
+    padding: 20px 30px;   /* mais altura para descer o botão */
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end; /* alinha o botão à direita */
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+}
+
+/* Botão de tema – um pouco maior e com margem */
+.tema-botao {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    width: 42px;
+    height: 42px;
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 10px; /* desce um pouco */
+}
+
+.tema-botao:hover {
+    background: var(--hover-bg);
+    transform: scale(1.05);
+}
+
+/* ===== CONTENT AREA ===== */
+.content-area {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    background: var(--bg-main);
+}
+
+/* ===== CARDS ===== */
+.card {
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color);
+}
+
+.card h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 16px 0;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+/* ===== TABELAS ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+table th {
+    background: var(--table-header);
+    color: var(--text-primary);
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid var(--border-color);
+}
+
+table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+table tr:hover td {
+    background: var(--hover-bg);
+}
+
+.status-ativo {
+    color: #27ae60;
+    font-weight: 600;
+}
+.status-devolvido {
+    color: var(--text-secondary);
+}
+
+/* ===== FORMULÁRIOS ===== */
+form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px 20px;
+}
+
+form .full-width {
+    grid-column: 1 / -1;
+}
+
+label {
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 4px;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    transition: border 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--btn-primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(52,152,219,0.2);
+}
+
+/* ===== BOTÕES ===== */
+button {
+    background: var(--btn-primary);
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background: var(--btn-primary-hover);
+}
+
+button.secundario {
+    background: var(--text-secondary);
+}
+
+button.secundario:hover {
+    background: #7f8c8d;
+}
+
+button.perigo {
+    background: var(--btn-danger);
+}
+
+button.perigo:hover {
+    background: var(--btn-danger-hover);
+}
+
+.botoes-acao {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+/* ===== NOTIFICAÇÃO ===== */
+.notificacao {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--notif-bg);
+    color: #fff;
+    padding: 14px 24px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 999;
+    font-weight: 500;
+    animation: slideDown 0.3s ease;
+}
+
+.notificacao.erro {
+    background: var(--notif-error);
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== RESPONSIVO ===== */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 200px;
+        min-width: 200px;
+    }
+    .sidebar-header h2 {
+        font-size: 1.1rem;
+    }
+    .content-area {
+        padding: 16px;
+    }
+    form {
+        grid-template-columns: 1fr;
+    }
+    .topbar {
+        padding: 10px 16px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .topbar h1 {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar {
+        width: 160px;
+        min-width: 160px;
+    }
+    .sidebar-nav a {
+        padding: 8px 14px;
+        font-size: 0.85rem;
+    }
+    .sidebar-header {
+        padding: 16px;
+    }
+    .sidebar-header h2 {
+        font-size: 0.95rem;
+    }
+}
+
+.tema-botao-sidebar {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 6px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: var(--text-primary);
+    width: 100%;
+    text-align: center;
+}
+
+.tema-botao-sidebar:hover {
+    background: var(--hover-bg);
+}

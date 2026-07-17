@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Biblioteca</title>
+    <link rel="stylesheet" href="static/css/style-admin.css">
+</head>
+<body>
+    <!-- MODAL DE LOGIN DO BIBLIOTECÁRIO -->
+    <div id="login-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:999;">
+        <div style="background:#fff; padding:40px; border-radius:8px; max-width:360px; width:100%;">
+            <h2>Login do Bibliotecário</h2>
+            <form id="login-form">
+                <label>Usuário</label>
+                <input type="text" id="login-user" placeholder="ana ou carlos">
+                <label>Senha</label>
+                <input type="password" id="login-pass" placeholder="senha">
+                <button type="submit" style="width:100%; margin-top:10px;">Entrar</button>
+            </form>
+            <p id="login-error" style="color:#e74c3c; display:none; margin-top:10px;">Credenciais inválidas.</p>
+        </div>
+    </div>
+
+    <!-- CONTAINER PRINCIPAL -->
+    <div class="admin-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>📚 Biblioteca</h2>
+                <span class="user-name" id="admin-nome">Desconectado</span>
+            </div>
+            <div style="padding: 10px 20px; border-bottom: 1px solid var(--border-color);">
+                <button id="tema-btn" class="tema-botao-sidebar" title="Alternar tema">🌙</button>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="#" data-section="usuarios">👤 Usuários</a></li>
+                    <li><a href="#" data-section="catalogo">📖 Catálogo</a></li>
+                    <li><a href="#" data-section="relatorio">📊 Relatório</a></li>
+                    <li><a href="#" data-section="alugar">➕ Alugar Livro</a></li>
+                    <li><a href="#" data-section="devolver">📦 Devolver</a></li>
+                    <li><a href="#" data-section="cadastro-usuario">🆕 Novo Usuário</a></li>
+                    <li><a href="#" id="logout-btn">🚪 Sair</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <h1 id="section-title">Usuários</h1>
+                <div class="topbar-actions"></div>
+            </header>
+            <div class="content-area" id="content-area">
+                <p>Faça login para acessar o sistema.</p>
+            </div>
+        </main>
+    </div>
+
+    <div id="notificacao" class="notificacao" style="display:none;"></div>
+
+    <script src="https://unpkg.com/dexie@3.2.3/dist/dexie.js"></script>
+    <script src="static/js/db.js"></script>
+    <script src="static/js/admin-app.js"></script>
+</body>
+</html>
