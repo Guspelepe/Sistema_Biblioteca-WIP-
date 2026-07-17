@@ -4,9 +4,7 @@
 
 document.addEventListener('DOMContentLoaded', function() {
 
-    // ==========================================
-    // 1. IMAGEM ALEATÓRIA (senhorlendo.jpg / garotalendo.jpg)
-    // ==========================================
+    // ===== IMAGEM ALEATÓRIA =====
     const imagens = [
         'static/src/menu/senhorlendo.jpg',
         'static/src/menu/garotalendo.jpg'
@@ -18,9 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
         imgElement.alt = 'Imagem de leitor';
     }
 
-    // ==========================================
-    // 2. FRASES FAMOSAS DE LIVROS (30 frases)
-    // ==========================================
+    // ===== FRASES =====
     const FRASES = [
         { texto: "A leitura é uma forma de viajar sem sair do lugar.", autor: "Eça de Queirós" },
         { texto: "Ler é sonhar pela mão de outro.", autor: "Fernando Pessoa" },
@@ -61,13 +57,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const frase = FRASES[randomIndex];
         container.innerHTML = `"${frase.texto}"<br><span style="font-size:0.9rem; font-weight:300; opacity:0.85;">— ${frase.autor}</span>`;
     }
-
-    // Chama a função para exibir uma frase aleatória
     exibirFrase();
 
-    // ==========================================
-    // 3. ELEMENTOS DO DOM
-    // ==========================================
+    // ===== ELEMENTOS DOM =====
     const formLogin = document.getElementById('login-form');
     const erroLogin = document.getElementById('erro');
     const btnAbrirRegistro = document.getElementById('btn-abrir-registro');
@@ -76,9 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const erroRegistro = document.getElementById('erro-registro');
     const btnFecharRegistro = document.getElementById('btn-fechar-registro');
 
-    // ==========================================
-    // 4. VERIFICA SESSÃO (redireciona se já logado)
-    // ==========================================
+    // ===== VERIFICA SESSÃO =====
     if (sessionStorage.getItem('logado') === 'true') {
         const perfil = sessionStorage.getItem('perfil');
         if (perfil === 'bibliotecario') {
@@ -89,9 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // ==========================================
-    // 5. FUNÇÃO PARA AGUARDAR O BANCO FICAR PRONTO
-    // ==========================================
+    // ===== AGUARDA BANCO =====
     async function aguardarBanco() {
         return new Promise((resolve) => {
             if (typeof db !== 'undefined') {
@@ -107,14 +95,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ==========================================
-    // 6. FUNÇÃO PARA BUSCAR USUÁRIO (fallback manual)
-    // ==========================================
+    // ===== BUSCA USUÁRIO =====
     async function buscarUsuarioPorIdentificador(identificador) {
         console.log('🔍 Buscando por:', identificador);
         const cpfLimpo = identificador.replace(/\D/g, '');
 
-        // 1. Busca por CPF
+        // 1. CPF
         if (cpfLimpo.length === 11) {
             const cpfFormatado = cpfLimpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
             try {
@@ -123,63 +109,51 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('✅ Encontrado por CPF:', cliente.nome);
                     return cliente;
                 }
-            } catch (e) {
-                console.warn('Erro na busca por CPF:', e);
-            }
+            } catch (e) { console.warn('Erro CPF:', e); }
         }
 
-        // 2. Busca por apelido (índice, fallback manual)
+        // 2. Apelido
         try {
             const cliente = await db.clientes.where('apelido').equalsIgnoreCase(identificador).first();
             if (cliente) {
                 console.log('✅ Encontrado por apelido:', cliente.nome);
                 return cliente;
             }
-        } catch (e) {
-            console.warn('Índice "apelido" não encontrado, usando fallback manual.');
-        }
+        } catch (e) { console.warn('Erro apelido:', e); }
 
-        // 3. Busca por nome (índice, fallback manual)
+        // 3. Nome
         try {
             const cliente = await db.clientes.where('nome').equalsIgnoreCase(identificador).first();
             if (cliente) {
                 console.log('✅ Encontrado por nome:', cliente.nome);
                 return cliente;
             }
-        } catch (e) {
-            console.warn('Índice "nome" não encontrado, usando fallback manual.');
-        }
+        } catch (e) { console.warn('Erro nome:', e); }
 
-        // 4. FALLBACK: percorre todos os clientes
-        console.log('🔍 Usando fallback manual (percorrendo todos os clientes)...');
+        // 4. Fallback manual
+        console.log('🔍 Fallback manual...');
         const todos = await db.clientes.toArray();
-        console.log(`📋 ${todos.length} clientes carregados.`);
         const cliente = todos.find(c => {
             const matchCpf = c.cpf && c.cpf.replace(/\D/g, '') === cpfLimpo;
             const matchNick = c.apelido && c.apelido.toLowerCase() === identificador.toLowerCase();
             const matchNome = c.nome && c.nome.toLowerCase() === identificador.toLowerCase();
             return matchCpf || matchNick || matchNome;
         });
-
-        if (cliente) {
-            console.log('✅ Encontrado no fallback:', cliente.nome);
-        } else {
-            console.warn('❌ Nenhum cliente encontrado.');
-        }
+        if (cliente) console.log('✅ Encontrado no fallback:', cliente.nome);
+        else console.warn('❌ Nenhum cliente encontrado.');
         return cliente || null;
     }
 
-    // ==========================================
-    // 7. LOGIN
-    // ==========================================
+    // ===== LOGIN =====
     formLogin.addEventListener('submit', async function(e) {
         e.preventDefault();
+        erroLogin.classList.remove('visible');
         erroLogin.style.display = 'none';
 
         const identificador = document.getElementById('identificador').value.trim();
         const senha = document.getElementById('senha').value.trim();
 
-        // Login do bibliotecário (credenciais fixas)
+        // Bibliotecário
         if (identificador === 'ACESSORESTRITO' && senha === '1234') {
             sessionStorage.setItem('logado', 'true');
             sessionStorage.setItem('perfil', 'bibliotecario');
@@ -198,26 +172,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 sessionStorage.setItem('usuario', cliente.nome);
                 sessionStorage.setItem('usuarioId', cliente.id);
                 sessionStorage.setItem('cpf', cliente.cpf);
+                console.log('✅ Login bem-sucedido! Redirecionando para user.html');
                 window.location.href = 'user.html';
             } else {
                 erroLogin.textContent = 'Usuário ou senha inválidos.';
                 erroLogin.classList.add('visible');
+                erroLogin.style.display = 'block';
             }
         } catch (err) {
             console.error('Erro no login:', err);
             erroLogin.textContent = 'Erro ao conectar com o banco de dados. Tente novamente.';
             erroLogin.classList.add('visible');
+            erroLogin.style.display = 'block';
         }
     });
 
-    // ==========================================
-    // 8. ABRIR / FECHAR MODAL DE REGISTRO
-    // ==========================================
+    // ===== MODAL =====
     btnAbrirRegistro.addEventListener('click', function() {
         modalRegistro.classList.add('active');
         formRegistro.reset();
-        erroRegistro.style.display = 'none';
         erroRegistro.classList.remove('visible');
+        erroRegistro.style.display = 'none';
     });
 
     btnFecharRegistro.addEventListener('click', function() {
@@ -225,14 +200,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     modalRegistro.addEventListener('click', function(e) {
-        if (e.target === modalRegistro) {
-            modalRegistro.classList.remove('active');
-        }
+        if (e.target === modalRegistro) modalRegistro.classList.remove('active');
     });
 
-    // ==========================================
-    // 9. MÁSCARA DE CPF
-    // ==========================================
+    // ===== MÁSCARA CPF =====
     window.mascararCPF = function(input) {
         let cpf = input.value.replace(/\D/g, '');
         if (cpf.length > 11) cpf = cpf.substring(0, 11);
@@ -243,13 +214,11 @@ document.addEventListener('DOMContentLoaded', function() {
         input.value = formatado;
     };
 
-    // ==========================================
-    // 10. REGISTRO DE NOVO USUÁRIO
-    // ==========================================
+    // ===== REGISTRO =====
     formRegistro.addEventListener('submit', async function(e) {
         e.preventDefault();
-        erroRegistro.style.display = 'none';
         erroRegistro.classList.remove('visible');
+        erroRegistro.style.display = 'none';
 
         const nome = document.getElementById('reg-nome').value.trim();
         const nick = document.getElementById('reg-nick').value.trim();
@@ -260,48 +229,35 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!nome || !nick || cpfBruto.length !== 11 || !senha || senha.length < 4) {
             erroRegistro.textContent = 'Preencha todos os campos corretamente (senha mínimo 4 caracteres).';
             erroRegistro.classList.add('visible');
+            erroRegistro.style.display = 'block';
             return;
         }
 
         try {
             await aguardarBanco();
-
             const cpfFormatado = cpfBruto.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
 
-            // Verifica duplicatas manualmente
             const todos = await db.clientes.toArray();
-            const cpfExistente = todos.find(c => c.cpf === cpfFormatado);
-            if (cpfExistente) {
+            if (todos.find(c => c.cpf === cpfFormatado)) {
                 erroRegistro.textContent = 'CPF já cadastrado.';
                 erroRegistro.classList.add('visible');
+                erroRegistro.style.display = 'block';
                 return;
             }
-
-            const nickExistente = todos.find(c => c.apelido && c.apelido.toLowerCase() === nick.toLowerCase());
-            if (nickExistente) {
+            if (todos.find(c => c.apelido && c.apelido.toLowerCase() === nick.toLowerCase())) {
                 erroRegistro.textContent = 'Apelido já está em uso. Escolha outro.';
                 erroRegistro.classList.add('visible');
+                erroRegistro.style.display = 'block';
                 return;
             }
 
-            // Cria o usuário
             const novoId = await db.clientes.add({
-                nome,
-                apelido: nick,
-                cpf: cpfFormatado,
-                foto: foto || '',
-                senha,
-                nascimento: '2000-01-01',
-                livros_lidos: 0,
-                media_estrelas: 0,
-                lendo_agora: '',
-                bio: ''
+                nome, apelido: nick, cpf: cpfFormatado, foto: foto || '',
+                senha, nascimento: '2000-01-01',
+                livros_lidos: 0, media_estrelas: 0, lendo_agora: '', bio: ''
             });
 
-            // Fecha o modal
             modalRegistro.classList.remove('active');
-
-            // Login automático
             sessionStorage.setItem('logado', 'true');
             sessionStorage.setItem('perfil', 'usuario');
             sessionStorage.setItem('usuario', nome);
@@ -313,12 +269,11 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Erro no registro:', err);
             erroRegistro.textContent = 'Erro ao cadastrar. Tente novamente.';
             erroRegistro.classList.add('visible');
+            erroRegistro.style.display = 'block';
         }
     });
 
-    // ==========================================
-    // 11. FUNÇÃO PARA MOSTRAR/OCULTAR SENHA (global)
-    // ==========================================
+    // ===== MOSTRAR SENHA =====
     window.toggleSenha = function(inputId, botao) {
         const input = document.getElementById(inputId);
         if (!input) return;

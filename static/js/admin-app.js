@@ -32,8 +32,25 @@ document.addEventListener('DOMContentLoaded', function() {
         sessionStorage.removeItem('usuario');
     }
 
-    // ===== FUNÇÕES DE RENDERIZAÇÃO (as mesmas de antes) =====
+    // ===== AGUARDA O BANCO =====
+    async function aguardarBanco() {
+        return new Promise((resolve) => {
+            if (typeof db !== 'undefined') {
+                resolve();
+                return;
+            }
+            const interval = setInterval(() => {
+                if (typeof db !== 'undefined') {
+                    clearInterval(interval);
+                    resolve();
+                }
+            }, 200);
+        });
+    }
+
+    // ===== FUNÇÕES DE RENDERIZAÇÃO =====
     async function renderUsuarios() {
+        await aguardarBanco();
         const clientes = await db.clientes.toArray();
         const alugueisAtivos = await db.alugueis.where({ status: 'ativo' }).toArray();
         const mapaAluguel = {};
@@ -44,16 +61,18 @@ document.addEventListener('DOMContentLoaded', function() {
             html += `<p>Nenhum usuário cadastrado.</p>`;
         } else {
             html += `<table>
-                <thead><tr><th>Foto</th><th>Nome</th><th>CPF</th><th>Livros Lidos</th><th>Média</th><th>Lendo Agora</th><th>Livro Alugado</th></tr></thead><tbody>`;
+                <thead><tr><th>Foto</th><th>Nome</th><th>Apelido</th><th>CPF</th><th>Livros Lidos</th><th>Média</th><th>Lendo Agora</th><th>Livro Alugado</th></tr></thead><tbody>`;
             clientes.forEach(c => {
                 const livro = mapaAluguel[c.id] || '—';
                 const fotoHtml = c.foto ? `<img src="${c.foto}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">` : '—';
                 const media = c.media_estrelas ? c.media_estrelas.toFixed(1) : '—';
                 const lendo = c.lendo_agora || '—';
                 const livrosLidos = c.livros_lidos || '—';
+                const apelido = c.apelido || '—';
                 html += `<tr>
                     <td>${fotoHtml}</td>
                     <td>${c.nome}</td>
+                    <td>${apelido}</td>
                     <td>${c.cpf}</td>
                     <td>${livrosLidos}</td>
                     <td>${media}</td>
@@ -68,6 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function renderCatalogo() {
+        await aguardarBanco();
         const livros = await db.livros.toArray();
         let html = `<div class="card"><h3>Catálogo de Livros (${livros.length})</h3>`;
         if (livros.length === 0) {
@@ -85,6 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function renderRelatorio() {
+        await aguardarBanco();
         const alugueis = await db.alugueis.toArray();
         const clientes = await db.clientes.toArray();
         const mapaClientes = {};
@@ -120,6 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function renderAlugar() {
+        await aguardarBanco();
         const clientes = await db.clientes.toArray();
         const livros = await db.livros.toArray();
 
@@ -201,43 +223,10 @@ document.addEventListener('DOMContentLoaded', function() {
             notificar(`Aluguel de "${livroTitulo}" realizado com sucesso!`);
             renderAlugar();
         });
-
-                async function renderUsuarios() {
-            const clientes = await db.clientes.toArray();
-            const alugueisAtivos = await db.alugueis.where({ status: 'ativo' }).toArray();
-            const mapaAluguel = {};
-            alugueisAtivos.forEach(a => { mapaAluguel[a.cliente_id] = a.livro; });
-
-            let html = `<div class="card"><h3>Usuários Cadastrados</h3>`;
-            if (clientes.length === 0) {
-                html += `<p>Nenhum usuário cadastrado.</p>`;
-            } else {
-                html += `<table>
-                    <thead><tr><th>Foto</th><th>Nome</th><th>CPF</th><th>Livros Lidos</th><th>Média</th><th>Lendo Agora</th><th>Livro Alugado</th></tr></thead><tbody>`;
-                clientes.forEach(c => {
-                    const livro = mapaAluguel[c.id] || '—';
-                    const fotoHtml = c.foto ? `<img src="${c.foto}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">` : '—';
-                    const media = c.media_estrelas ? c.media_estrelas.toFixed(1) : '—';
-                    const lendo = c.lendo_agora || '—';
-                    const livrosLidos = c.livros_lidos || '—';
-                    html += `<tr>
-                        <td>${fotoHtml}</td>
-                        <td>${c.nome}</td>
-                        <td>${c.cpf}</td>
-                        <td>${livrosLidos}</td>
-                        <td>${media}</td>
-                        <td>${lendo}</td>
-                        <td>${livro !== '—' ? `<span class="status-ativo">${livro}</span>` : '—'}</td>
-                    </tr>`;
-                });
-                html += `</tbody></table>`;
-            }
-            html += `</div>`;
-            contentArea.innerHTML = html;
-        }
     }
 
     async function renderDevolver() {
+        await aguardarBanco();
         const clientes = await db.clientes.toArray();
         let html = `<div class="card"><h3>Devolução de Livro</h3>
             <form id="form-devolver">
@@ -386,14 +375,10 @@ document.addEventListener('DOMContentLoaded', function() {
             sessionStorage.setItem('logado', 'true');
             sessionStorage.setItem('perfil', 'bibliotecario');
             sessionStorage.setItem('usuario', user);
-
-            // Oculta o modal
             loginModal.style.display = 'none';
             adminNomeSpan.textContent = user;
             loginError.style.display = 'none';
             document.getElementById('login-form').reset();
-
-            // Carrega a primeira seção
             document.querySelector('a[data-section="usuarios"]')?.click();
         } else {
             loginError.style.display = 'block';
@@ -422,7 +407,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 'cadastro-usuario': 'Novo Usuário'
             };
             sectionTitle.textContent = titles[section] || section;
-
             menuLinks.forEach(l => l.classList.remove('active'));
             this.classList.add('active');
 
@@ -446,7 +430,6 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.classList.add('tema-escuro');
             temaBtn.textContent = '☀️';
         }
-
         temaBtn.addEventListener('click', function() {
             document.body.classList.toggle('tema-escuro');
             const isEscuro = document.body.classList.contains('tema-escuro');
@@ -455,6 +438,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ===== OBSERVAÇÃO =====
-    console.log('✅ Admin app carregado. Modal de login visível.');
+    // ===== INICIALIZAÇÃO =====
+    if (sessionStorage.getItem('logado') === 'true' && sessionStorage.getItem('perfil') === 'bibliotecario') {
+        loginModal.style.display = 'none';
+        adminNomeSpan.textContent = sessionStorage.getItem('usuario');
+        document.querySelector('a[data-section="usuarios"]')?.click();
+    } else {
+        loginModal.style.display = 'flex';
+        contentArea.innerHTML = '<p>Faça login para acessar o sistema.</p>';
+    }
 });
