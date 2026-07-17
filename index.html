@@ -5,27 +5,164 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biblioteca - Acesso</title>
     <link rel="stylesheet" href="static/css/style-landing.css">
+    <style>
+        /* Estilos adicionais para o modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 420px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .modal-content h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .modal-content .campo {
+            margin-bottom: 15px;
+        }
+        .modal-content .campo label {
+            display: block;
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+        .modal-content .campo input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #dce1e6;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+        .modal-content .campo input:focus {
+            border-color: #6a1b9a;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(106,27,154,0.15);
+        }
+        .modal-content button {
+            width: 100%;
+            padding: 12px;
+            background: #6a1b9a;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+        .modal-content button:hover {
+            background: #4a148c;
+        }
+        .modal-content .fechar {
+            background: #e74c3c;
+            margin-top: 10px;
+        }
+        .modal-content .fechar:hover {
+            background: #c0392b;
+        }
+        .modal-content .erro-registro {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+        .btn-registrar {
+            background: transparent;
+            color: #6a1b9a;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 15px;
+            padding: 0;
+            font-weight: 500;
+            text-decoration: underline;
+        }
+        .btn-registrar:hover {
+            color: #4a148c;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h1>📚 Biblioteca</h1>
-            <p>Digite suas credenciais para acessar</p>
-            <form id="login-form">
+    <div class="landing-container">
+        <!-- Coluna da imagem -->
+        <div class="col-imagem" id="col-imagem">
+            <img id="imagem-destaque" src="" alt="Leitor">
+        </div>
+
+        <!-- Coluna do formulário -->
+        <div class="col-form">
+            <div class="card">
+                <h1>📚 Biblioteca</h1>
+                <p>Digite suas credenciais para acessar</p>
+                <form id="login-form">
+                    <div class="campo">
+                        <label for="identificador">Usuário (nick, nome ou CPF)</label>
+                        <input type="text" id="identificador" placeholder="Digite seu usuário, nick ou CPF" required>
+                    </div>
+                    <div class="campo">
+                        <label for="senha">Senha</label>
+                        <input type="password" id="senha" placeholder="Digite sua senha" required>
+                    </div>
+                    <button type="submit">Entrar</button>
+                </form>
+                <button class="btn-registrar" id="btn-abrir-registro">Ainda não tem conta? Registre-se</button>
+                <p id="erro" style="display: none; color: #e74c3c; margin-top: 10px;">Credenciais inválidas. Tente novamente.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Registro -->
+    <div class="modal" id="modal-registro">
+        <div class="modal-content">
+            <h2>📝 Criar conta</h2>
+            <form id="form-registro">
                 <div class="campo">
-                    <label for="identificador">Usuário ou CPF</label>
-                    <input type="text" id="identificador" placeholder="Ex: ACESSORESTRITO ou 111.222.333-44" required>
+                    <label for="reg-nome">Nome completo</label>
+                    <input type="text" id="reg-nome" placeholder="Ex: Maria Silva" required>
                 </div>
                 <div class="campo">
-                    <label for="senha">Senha</label>
-                    <input type="password" id="senha" placeholder="Digite sua senha" required>
+                    <label for="reg-nick">Apelido (nick)</label>
+                    <input type="text" id="reg-nick" placeholder="Ex: Mari" required>
                 </div>
-                <button type="submit">Entrar</button>
+                <div class="campo">
+                    <label for="reg-cpf">CPF</label>
+                    <input type="text" id="reg-cpf" placeholder="000.000.000-00" required maxlength="14" oninput="mascararCPF(this)">
+                </div>
+                <div class="campo">
+                    <label for="reg-senha">Senha</label>
+                    <input type="password" id="reg-senha" placeholder="Mínimo 4 caracteres" required>
+                </div>
+                <div class="campo">
+                    <label for="reg-foto">URL da foto (opcional)</label>
+                    <input type="url" id="reg-foto" placeholder="https://exemplo.com/foto.jpg">
+                </div>
+                <button type="submit">Registrar</button>
+                <button type="button" class="fechar" id="btn-fechar-registro">Cancelar</button>
+                <p id="erro-registro" class="erro-registro"></p>
             </form>
-            <p id="erro" style="color: #e74c3c; display: none; margin-top: 15px;">Credenciais inválidas. Tente novamente.</p>
-            <p style="margin-top: 25px; font-size: 0.8rem; color: #888;">
-                <strong>Bibliotecário:</strong> ACESSORESTRITO / 1234
-            </p>
         </div>
     </div>
 

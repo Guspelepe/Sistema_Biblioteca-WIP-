@@ -154,7 +154,7 @@ body {
     overflow-y: auto;
 }
 
-/* ===== CARDS (livros) ===== */
+/* ===== CARDS ===== */
 .card-user {
     background: var(--bg-card);
     border-radius: 12px;
@@ -169,6 +169,7 @@ body {
     color: var(--text-primary);
 }
 
+/* ===== GRADE DE LIVROS ===== */
 .grade-livros {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -275,7 +276,7 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px 20px;
-    max-width: 600px;
+    max-width: 700px;
 }
 
 .form-user .full-width {
@@ -300,6 +301,8 @@ body {
     background: var(--bg-card);
     color: var(--text-primary);
     transition: border 0.2s;
+    resize: vertical;
+    font-family: inherit;
 }
 
 .form-user input:focus,
@@ -371,6 +374,7 @@ body {
     }
     .form-user {
         grid-template-columns: 1fr;
+        max-width: 100%;
     }
 }
 

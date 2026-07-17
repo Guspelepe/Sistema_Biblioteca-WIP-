@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const usuarioId = parseInt(sessionStorage.getItem('usuarioId'));
     let usuarioAtual = null;
 
-    // ===== AGUARDA O BANCO FICAR PRONTO =====
+    // ===== AGUARDA O BANCO =====
     async function aguardarBanco() {
         return new Promise((resolve) => {
             if (typeof db !== 'undefined') {
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ===== CARREGA DADOS DO USUÁRIO =====
+    // ===== CARREGA USUÁRIO =====
     async function carregarUsuario() {
         try {
             await aguardarBanco();
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===== FUNÇÕES DE RENDERIZAÇÃO =====
 
-    // 1. Página Inicial (destaques, últimos lançamentos, etc.)
+    // 1. Página Inicial
     async function renderInicio() {
         try {
             await aguardarBanco();
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             html += `</div></div>`;
 
-            // Últimas avaliações (comunidade)
+            // Últimas avaliações
             const avaliacoes = await db.avaliacoes.toArray();
             const ultimasAvaliacoes = avaliacoes.sort((a,b) => new Date(b.data) - new Date(a.data)).slice(0, 3);
             if (ultimasAvaliacoes.length > 0) {
@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 2. Biblioteca (todos os livros)
+    // 2. Biblioteca
     async function renderBiblioteca() {
         try {
             await aguardarBanco();
@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 3. Meus Livros (aluguéis do usuário)
+    // 3. Meus Livros
     async function renderMeusLivros() {
         try {
             await aguardarBanco();
@@ -215,12 +215,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 4. Perfil (editar)
+    // ===== 4. PERFIL (completo com bio, nascimento, lendo_agora) =====
     async function renderPerfil() {
         try {
             await aguardarBanco();
             if (!usuarioAtual) await carregarUsuario();
             console.log('👤 Renderizando perfil...');
+
+            // Garantir que campos existam (caso não estejam no banco)
+            const bio = usuarioAtual.bio || '';
+            const nascimento = usuarioAtual.nascimento || '';
+            const lendoAgora = usuarioAtual.lendo_agora || '';
 
             let html = `
                 <div class="card-user">
@@ -231,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <input type="text" id="perfil-nome" value="${usuarioAtual.nome || ''}" required>
                         </div>
                         <div>
-                            <label for="perfil-apelido">Apelido</label>
+                            <label for="perfil-apelido">Apelido (nick)</label>
                             <input type="text" id="perfil-apelido" placeholder="Como quer ser chamado?" value="${usuarioAtual.apelido || ''}">
                         </div>
                         <div>
@@ -239,6 +244,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             <input type="url" id="perfil-foto" placeholder="https://exemplo.com/foto.jpg" value="${usuarioAtual.foto || ''}">
                         </div>
                         <div>
+                            <label for="perfil-nascimento">Data de Nascimento</label>
+                            <input type="date" id="perfil-nascimento" value="${nascimento}">
+                        </div>
+                        <div>
+                            <label for="perfil-lendo">📖 Lendo agora</label>
+                            <input type="text" id="perfil-lendo" placeholder="Título do livro que está lendo" value="${lendoAgora}">
+                        </div>
+                        <div class="full-width">
+                            <label for="perfil-bio">Bio (descrição curta)</label>
+                            <textarea id="perfil-bio" rows="3" placeholder="Fale um pouco sobre você...">${bio}</textarea>
+                        </div>
+                        <div class="full-width">
                             <label for="perfil-senha">Nova senha (opcional)</label>
                             <input type="password" id="perfil-senha" placeholder="Deixe em branco para manter">
                         </div>
@@ -251,11 +268,15 @@ document.addEventListener('DOMContentLoaded', function() {
             contentUser.innerHTML = html;
             console.log('✅ Perfil renderizado.');
 
+            // ===== EVENTO DE SUBMISSÃO =====
             document.getElementById('form-perfil').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const nome = document.getElementById('perfil-nome').value.trim();
                 const apelido = document.getElementById('perfil-apelido').value.trim();
                 const foto = document.getElementById('perfil-foto').value.trim();
+                const nascimento = document.getElementById('perfil-nascimento').value;
+                const lendoAgora = document.getElementById('perfil-lendo').value.trim();
+                const bio = document.getElementById('perfil-bio').value.trim();
                 const novaSenha = document.getElementById('perfil-senha').value.trim();
 
                 if (!nome) {
@@ -263,7 +284,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                const atualizacao = { nome, apelido, foto };
+                const atualizacao = {
+                    nome,
+                    apelido,
+                    foto: foto || '',
+                    nascimento,
+                    lendo_agora: lendoAgora,
+                    bio
+                };
+
                 if (novaSenha.length >= 4) {
                     atualizacao.senha = novaSenha;
                 }
@@ -274,16 +303,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 userApelido.textContent = apelido;
                 if (foto) userAvatar.src = foto;
                 notificar('Perfil atualizado com sucesso!');
-                renderPerfil();
+                renderPerfil(); // recarrega
             });
+
         } catch (err) {
             console.error('Erro ao renderizar perfil:', err);
             contentUser.innerHTML = '<p>⚠️ Erro ao carregar perfil.</p>';
         }
     }
 
-    // 5. Comunidade (avaliações)
-    // ===== FUNÇÃO RENDER COMUNIDADE (ATUALIZADA) =====
+    // 5. Comunidade
     async function renderComunidade() {
         try {
             await aguardarBanco();
@@ -292,10 +321,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const avaliacoes = await db.avaliacoes.toArray();
             const clientes = await db.clientes.toArray();
             const mapaClientes = {};
-            clientes.forEach(c => { mapaClientes[c.id] = { nome: c.nome, apelido: c.apelido || c.nome, foto: c.foto || '' }; });
-
-            console.log(`📊 ${avaliacoes.length} avaliações encontradas.`);
-            console.log(`👥 ${clientes.length} clientes carregados.`);
+            clientes.forEach(c => {
+                mapaClientes[c.id] = {
+                    nome: c.nome,
+                    apelido: c.apelido || c.nome,
+                    foto: c.foto || ''
+                };
+            });
 
             avaliacoes.sort((a, b) => new Date(b.data) - new Date(a.data));
 
@@ -376,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ===== FUNÇÕES AUXILIARES GLOBAIS =====
+    // ===== FUNÇÕES GLOBAIS =====
     window.abrirLivro = function(titulo) {
         notificar(`📖 Detalhes de "${titulo}" em breve.`, 'info');
     };
