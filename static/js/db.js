@@ -342,3 +342,105 @@ db.on('ready', async () => {
         console.error('❌ Erro:', err);
     }
 });
+
+// ==========================================
+// db.js – Configuração do Dexie (global)
+// ==========================================
+
+window.db = new Dexie('BibliotecaDB');
+
+// ===== VERSÃO 6 – Adiciona tabela frases =====
+db.version(6).stores({
+    clientes: '++id, cpf, nome, apelido, foto, livros_lidos, media_estrelas, lendo_agora, bio, nascimento',
+    alugueis: '++id, cliente_id, status, livro',
+    livros: '++id, titulo',
+    solicitacoes: '++id, usuario_id',
+    avaliacoes: '++id, livro, usuario_id, nota, comentario, data',
+    frases: '++id, texto, autor'
+});
+
+// ===== LISTA DE FRASES =====
+const FRASES_INICIAIS = [
+    { texto: "A leitura é uma forma de viajar sem sair do lugar.", autor: "Eça de Queirós" },
+    { texto: "Ler é sonhar pela mão de outro.", autor: "Fernando Pessoa" },
+    { texto: "O livro é um mestre que fala sem voz.", autor: "Provérbio chinês" },
+    { texto: "A vida é muito curta para ser pequena.", autor: "Benjamin Disraeli" },
+    { texto: "Não há nada mais prazeroso do que aprender.", autor: "Marcus Tullius Cicero" },
+    { texto: "O que vale na vida não é o ponto de partida, mas a caminhada.", autor: "Milton Nascimento" },
+    { texto: "A imaginação governa o mundo.", autor: "Napoleão Bonaparte" },
+    { texto: "Quem lê vive muitas vidas.", autor: "George R.R. Martin" },
+    { texto: "Um leitor vive mil vidas antes de morrer.", autor: "George R.R. Martin" },
+    { texto: "A leitura é para a mente o que o exercício é para o corpo.", autor: "Joseph Addison" },
+    { texto: "O importante é não parar de questionar.", autor: "Albert Einstein" },
+    { texto: "A beleza está nos olhos de quem vê.", autor: "Oscar Wilde" },
+    { texto: "A esperança é a última que morre.", autor: "Provérbio" },
+    { texto: "Não existem limites para o conhecimento.", autor: "Carl Sagan" },
+    { texto: "A verdade é como o sol: pode ser ofuscante, mas não pode ser negada.", autor: "Buda" },
+    { texto: "Ler é abrir uma porta para o mundo.", autor: "Monteiro Lobato" },
+    { texto: "O saber não ocupa lugar.", autor: "Provérbio" },
+    { texto: "A vida é uma viagem, não um destino.", autor: "Ralph Waldo Emerson" },
+    { texto: "O amor é a única força capaz de transformar um inimigo em amigo.", autor: "Martin Luther King" },
+    { texto: "A verdadeira viagem de descobrimento não consiste em procurar novas paisagens, mas em ter novos olhos.", autor: "Marcel Proust" },
+    { texto: "A leitura nos dá asas para voar.", autor: "Victor Hugo" },
+    { texto: "O futuro pertence àqueles que acreditam na beleza de seus sonhos.", autor: "Eleanor Roosevelt" },
+    { texto: "A gentileza é a linguagem que o surdo ouve e o cego vê.", autor: "Mark Twain" },
+    { texto: "A vida é o que acontece enquanto você faz planos.", autor: "John Lennon" },
+    { texto: "Não tenha medo de ser feliz.", autor: "Chico Xavier" },
+    { texto: "O destino não é uma questão de sorte, mas de escolha.", autor: "William Jennings Bryan" },
+    { texto: "A criatividade é a inteligência se divertindo.", autor: "Albert Einstein" },
+    { texto: "A força não vem da capacidade física, mas de uma vontade indomável.", autor: "Mahatma Gandhi" },
+    { texto: "A jornada mais longa começa com um único passo.", autor: "Lao Tsé" },
+    { texto: "O coração tem razões que a própria razão desconhece.", autor: "Blaise Pascal" }
+];
+
+// ===== FUNÇÃO PARA POPULAR FRASES (se estiver vazio) =====
+async function popularFrases() {
+    const count = await db.frases.count();
+    if (count === 0) {
+        await db.frases.bulkAdd(FRASES_INICIAIS);
+        console.log('📝 Frases inicializadas.');
+    }
+}
+
+// ===== ADICIONAR NO db.on('ready') =====
+db.on('ready', async () => {
+    try {
+        console.log('🔧 Inicializando...');
+
+        // Livros
+        const countLivros = await db.livros.count();
+        if (countLivros === 0) {
+            await db.livros.bulkAdd(LIVROS_INICIAIS);
+            console.log('📚 Livros inicializados.');
+        }
+
+        // Cliente padrão
+        const clientePadrao = await db.clientes.where('cpf').equals('111.222.333-44').first();
+        if (!clientePadrao) {
+            await db.clientes.add({
+                nome: 'Usuário Teste',
+                apelido: 'Teste',
+                cpf: '111.222.333-44',
+                nascimento: '1990-01-01',
+                senha: '123456'
+            });
+            console.log('👤 Cliente padrão criado.');
+        }
+
+        // Corrigir senhas
+        const semSenha = await db.clientes.filter(c => !c.senha).toArray();
+        for (let c of semSenha) {
+            await db.clientes.update(c.id, { senha: '123456' });
+        }
+
+        // Seed de usuários
+        await seedDatabase();
+
+        // Popula frases
+        await popularFrases();
+
+        console.log('✅ Banco pronto.');
+    } catch (err) {
+        console.error('❌ Erro:', err);
+    }
+});

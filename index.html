@@ -4,119 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biblioteca - Acesso</title>
+    <!-- Fonte Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="static/css/style-landing.css">
-    <style>
-        /* Estilos adicionais para o modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            justify-content: center;
-            align-items: center;
-            z-index: 999;
-        }
-        .modal.active {
-            display: flex;
-        }
-        .modal-content {
-            background: #fff;
-            padding: 30px;
-            border-radius: 16px;
-            max-width: 420px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        }
-        .modal-content h2 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .modal-content .campo {
-            margin-bottom: 15px;
-        }
-        .modal-content .campo label {
-            display: block;
-            font-weight: 500;
-            font-size: 0.85rem;
-            color: #2c3e50;
-            margin-bottom: 4px;
-        }
-        .modal-content .campo input {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid #dce1e6;
-            border-radius: 8px;
-            font-size: 0.95rem;
-        }
-        .modal-content .campo input:focus {
-            border-color: #6a1b9a;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(106,27,154,0.15);
-        }
-        .modal-content button {
-            width: 100%;
-            padding: 12px;
-            background: #6a1b9a;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: 10px;
-        }
-        .modal-content button:hover {
-            background: #4a148c;
-        }
-        .modal-content .fechar {
-            background: #e74c3c;
-            margin-top: 10px;
-        }
-        .modal-content .fechar:hover {
-            background: #c0392b;
-        }
-        .modal-content .erro-registro {
-            color: #e74c3c;
-            font-size: 0.9rem;
-            margin-top: 10px;
-            text-align: center;
-            display: none;
-        }
-        .btn-registrar {
-            background: transparent;
-            color: #6a1b9a;
-            border: none;
-            cursor: pointer;
-            font-size: 0.9rem;
-            margin-top: 15px;
-            padding: 0;
-            font-weight: 500;
-            text-decoration: underline;
-        }
-        .btn-registrar:hover {
-            color: #4a148c;
-        }
-    </style>
 </head>
 <body>
     <div class="landing-container">
-        <!-- Coluna da imagem -->
+        <!-- Coluna da imagem (esquerda) -->
         <div class="col-imagem" id="col-imagem">
             <img id="imagem-destaque" src="" alt="Leitor">
+            <div class="frase-container">
+                <p id="frase-destaque"></p>
+            </div>
         </div>
-
-        <!-- Coluna do formulário -->
+        <!-- Coluna do formulário (direita) -->
         <div class="col-form">
             <div class="card">
-                <h1>📚 Biblioteca</h1>
-                <p>Digite suas credenciais para acessar</p>
+                <h1><span>Biblioteca</span></h1>
+                <p class="subtitulo">Digite suas credenciais para acessar</p>
+
                 <form id="login-form">
                     <div class="campo">
                         <label for="identificador">Usuário (nick, nome ou CPF)</label>
@@ -124,20 +32,28 @@
                     </div>
                     <div class="campo">
                         <label for="senha">Senha</label>
-                        <input type="password" id="senha" placeholder="Digite sua senha" required>
+                        <div class="senha-wrapper">
+                            <input type="password" id="senha" placeholder="Digite sua senha" required>
+                            <button type="button" class="btn-mostrar-senha" onclick="toggleSenha('senha', this)">👁️</button>
+                        </div>
                     </div>
-                    <button type="submit">Entrar</button>
+                    <button type="submit" class="btn-entrar">Entrar</button>
                 </form>
-                <button class="btn-registrar" id="btn-abrir-registro">Ainda não tem conta? Registre-se</button>
-                <p id="erro" style="display: none; color: #e74c3c; margin-top: 10px;">Credenciais inválidas. Tente novamente.</p>
+
+                <div id="erro" style="display: none;">Credenciais inválidas. Tente novamente.</div>
+
+                <button type="button" class="btn-registrar" id="btn-abrir-registro">Ainda não tem conta? Registre-se</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal de Registro -->
-    <div class="modal" id="modal-registro">
+    <!-- ===== MODAL DE REGISTRO ===== -->
+    <div class="modal-overlay" id="modal-registro">
         <div class="modal-content">
-            <h2>📝 Criar conta</h2>
+            <button class="fechar" id="btn-fechar-registro">&times;</button>
+            <h2>📝 <span>Criar conta</span></h2>
+            <p class="subtitulo-modal">Preencha os dados para se cadastrar</p>
+
             <form id="form-registro">
                 <div class="campo">
                     <label for="reg-nome">Nome completo</label>
@@ -153,15 +69,17 @@
                 </div>
                 <div class="campo">
                     <label for="reg-senha">Senha</label>
-                    <input type="password" id="reg-senha" placeholder="Mínimo 4 caracteres" required>
+                    <div class="senha-wrapper">
+                        <input type="password" id="reg-senha" placeholder="Mínimo 4 caracteres" required>
+                        <button type="button" class="btn-mostrar-senha" onclick="toggleSenha('reg-senha', this)">👁️</button>
+                    </div>
                 </div>
                 <div class="campo">
                     <label for="reg-foto">URL da foto (opcional)</label>
                     <input type="url" id="reg-foto" placeholder="https://exemplo.com/foto.jpg">
                 </div>
-                <button type="submit">Registrar</button>
-                <button type="button" class="fechar" id="btn-fechar-registro">Cancelar</button>
-                <p id="erro-registro" class="erro-registro"></p>
+                <button type="submit" class="btn-primario">Registrar</button>
+                <div id="erro-registro" style="display: none;"></div>
             </form>
         </div>
     </div>
@@ -169,5 +87,20 @@
     <script src="https://unpkg.com/dexie@3.2.3/dist/dexie.js"></script>
     <script src="static/js/db.js"></script>
     <script src="static/js/landing.js"></script>
+
+    <script>
+        // ===== FUNÇÃO PARA MOSTRAR/OCULTAR SENHA =====
+        function toggleSenha(inputId, botao) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                botao.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                botao.textContent = '👁️';
+            }
+        }
+    </script>
 </body>
 </html>

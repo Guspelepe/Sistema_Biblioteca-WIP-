@@ -1,5 +1,12 @@
+// ============================================================
+// landing.js – Página de login e registro
+// ============================================================
+
 document.addEventListener('DOMContentLoaded', function() {
-    // ===== IMAGEM ALEATÓRIA =====
+
+    // ==========================================
+    // 1. IMAGEM ALEATÓRIA (senhorlendo.jpg / garotalendo.jpg)
+    // ==========================================
     const imagens = [
         'static/src/menu/senhorlendo.jpg',
         'static/src/menu/garotalendo.jpg'
@@ -11,7 +18,56 @@ document.addEventListener('DOMContentLoaded', function() {
         imgElement.alt = 'Imagem de leitor';
     }
 
-    // ===== ELEMENTOS DO DOM =====
+    // ==========================================
+    // 2. FRASES FAMOSAS DE LIVROS (30 frases)
+    // ==========================================
+    const FRASES = [
+        { texto: "A leitura é uma forma de viajar sem sair do lugar.", autor: "Eça de Queirós" },
+        { texto: "Ler é sonhar pela mão de outro.", autor: "Fernando Pessoa" },
+        { texto: "O livro é um mestre que fala sem voz.", autor: "Provérbio chinês" },
+        { texto: "A vida é muito curta para ser pequena.", autor: "Benjamin Disraeli" },
+        { texto: "Não há nada mais prazeroso do que aprender.", autor: "Marcus Tullius Cicero" },
+        { texto: "O que vale na vida não é o ponto de partida, mas a caminhada.", autor: "Milton Nascimento" },
+        { texto: "A imaginação governa o mundo.", autor: "Napoleão Bonaparte" },
+        { texto: "Quem lê vive muitas vidas.", autor: "George R.R. Martin" },
+        { texto: "Um leitor vive mil vidas antes de morrer.", autor: "George R.R. Martin" },
+        { texto: "A leitura é para a mente o que o exercício é para o corpo.", autor: "Joseph Addison" },
+        { texto: "O importante é não parar de questionar.", autor: "Albert Einstein" },
+        { texto: "A beleza está nos olhos de quem vê.", autor: "Oscar Wilde" },
+        { texto: "A esperança é a última que morre.", autor: "Provérbio" },
+        { texto: "Não existem limites para o conhecimento.", autor: "Carl Sagan" },
+        { texto: "A verdade é como o sol: pode ser ofuscante, mas não pode ser negada.", autor: "Buda" },
+        { texto: "Ler é abrir uma porta para o mundo.", autor: "Monteiro Lobato" },
+        { texto: "O saber não ocupa lugar.", autor: "Provérbio" },
+        { texto: "A vida é uma viagem, não um destino.", autor: "Ralph Waldo Emerson" },
+        { texto: "O amor é a única força capaz de transformar um inimigo em amigo.", autor: "Martin Luther King" },
+        { texto: "A verdadeira viagem de descobrimento não consiste em procurar novas paisagens, mas em ter novos olhos.", autor: "Marcel Proust" },
+        { texto: "A leitura nos dá asas para voar.", autor: "Victor Hugo" },
+        { texto: "O futuro pertence àqueles que acreditam na beleza de seus sonhos.", autor: "Eleanor Roosevelt" },
+        { texto: "A gentileza é a linguagem que o surdo ouve e o cego vê.", autor: "Mark Twain" },
+        { texto: "A vida é o que acontece enquanto você faz planos.", autor: "John Lennon" },
+        { texto: "Não tenha medo de ser feliz.", autor: "Chico Xavier" },
+        { texto: "O destino não é uma questão de sorte, mas de escolha.", autor: "William Jennings Bryan" },
+        { texto: "A criatividade é a inteligência se divertindo.", autor: "Albert Einstein" },
+        { texto: "A força não vem da capacidade física, mas de uma vontade indomável.", autor: "Mahatma Gandhi" },
+        { texto: "A jornada mais longa começa com um único passo.", autor: "Lao Tsé" },
+        { texto: "O coração tem razões que a própria razão desconhece.", autor: "Blaise Pascal" }
+    ];
+
+    function exibirFrase() {
+        const container = document.getElementById('frase-destaque');
+        if (!container) return;
+        const randomIndex = Math.floor(Math.random() * FRASES.length);
+        const frase = FRASES[randomIndex];
+        container.innerHTML = `"${frase.texto}"<br><span style="font-size:0.9rem; font-weight:300; opacity:0.85;">— ${frase.autor}</span>`;
+    }
+
+    // Chama a função para exibir uma frase aleatória
+    exibirFrase();
+
+    // ==========================================
+    // 3. ELEMENTOS DO DOM
+    // ==========================================
     const formLogin = document.getElementById('login-form');
     const erroLogin = document.getElementById('erro');
     const btnAbrirRegistro = document.getElementById('btn-abrir-registro');
@@ -20,7 +76,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const erroRegistro = document.getElementById('erro-registro');
     const btnFecharRegistro = document.getElementById('btn-fechar-registro');
 
-    // ===== VERIFICA SESSÃO =====
+    // ==========================================
+    // 4. VERIFICA SESSÃO (redireciona se já logado)
+    // ==========================================
     if (sessionStorage.getItem('logado') === 'true') {
         const perfil = sessionStorage.getItem('perfil');
         if (perfil === 'bibliotecario') {
@@ -31,7 +89,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // ===== AGUARDA BANCO =====
+    // ==========================================
+    // 5. FUNÇÃO PARA AGUARDAR O BANCO FICAR PRONTO
+    // ==========================================
     async function aguardarBanco() {
         return new Promise((resolve) => {
             if (typeof db !== 'undefined') {
@@ -47,7 +107,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ===== BUSCA USUÁRIO (fallback manual garantido) =====
+    // ==========================================
+    // 6. FUNÇÃO PARA BUSCAR USUÁRIO (fallback manual)
+    // ==========================================
     async function buscarUsuarioPorIdentificador(identificador) {
         console.log('🔍 Buscando por:', identificador);
         const cpfLimpo = identificador.replace(/\D/g, '');
@@ -66,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // 2. Tenta por apelido (índice, fallback manual)
+        // 2. Busca por apelido (índice, fallback manual)
         try {
             const cliente = await db.clientes.where('apelido').equalsIgnoreCase(identificador).first();
             if (cliente) {
@@ -77,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.warn('Índice "apelido" não encontrado, usando fallback manual.');
         }
 
-        // 3. Tenta por nome (índice, fallback manual)
+        // 3. Busca por nome (índice, fallback manual)
         try {
             const cliente = await db.clientes.where('nome').equalsIgnoreCase(identificador).first();
             if (cliente) {
@@ -107,7 +169,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return cliente || null;
     }
 
-    // ===== LOGIN =====
+    // ==========================================
+    // 7. LOGIN
+    // ==========================================
     formLogin.addEventListener('submit', async function(e) {
         e.preventDefault();
         erroLogin.style.display = 'none';
@@ -115,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const identificador = document.getElementById('identificador').value.trim();
         const senha = document.getElementById('senha').value.trim();
 
-        // Bibliotecário
+        // Login do bibliotecário (credenciais fixas)
         if (identificador === 'ACESSORESTRITO' && senha === '1234') {
             sessionStorage.setItem('logado', 'true');
             sessionStorage.setItem('perfil', 'bibliotecario');
@@ -137,33 +201,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.location.href = 'user.html';
             } else {
                 erroLogin.textContent = 'Usuário ou senha inválidos.';
-                erroLogin.style.display = 'block';
+                erroLogin.classList.add('visible');
             }
         } catch (err) {
             console.error('Erro no login:', err);
             erroLogin.textContent = 'Erro ao conectar com o banco de dados. Tente novamente.';
-            erroLogin.style.display = 'block';
+            erroLogin.classList.add('visible');
         }
     });
 
-    // ===== ABRIR MODAL =====
+    // ==========================================
+    // 8. ABRIR / FECHAR MODAL DE REGISTRO
+    // ==========================================
     btnAbrirRegistro.addEventListener('click', function() {
         modalRegistro.classList.add('active');
         formRegistro.reset();
         erroRegistro.style.display = 'none';
+        erroRegistro.classList.remove('visible');
     });
 
-    // ===== FECHAR MODAL =====
     btnFecharRegistro.addEventListener('click', function() {
         modalRegistro.classList.remove('active');
     });
+
     modalRegistro.addEventListener('click', function(e) {
         if (e.target === modalRegistro) {
             modalRegistro.classList.remove('active');
         }
     });
 
-    // ===== MÁSCARA DE CPF =====
+    // ==========================================
+    // 9. MÁSCARA DE CPF
+    // ==========================================
     window.mascararCPF = function(input) {
         let cpf = input.value.replace(/\D/g, '');
         if (cpf.length > 11) cpf = cpf.substring(0, 11);
@@ -174,10 +243,13 @@ document.addEventListener('DOMContentLoaded', function() {
         input.value = formatado;
     };
 
-    // ===== REGISTRO =====
+    // ==========================================
+    // 10. REGISTRO DE NOVO USUÁRIO
+    // ==========================================
     formRegistro.addEventListener('submit', async function(e) {
         e.preventDefault();
         erroRegistro.style.display = 'none';
+        erroRegistro.classList.remove('visible');
 
         const nome = document.getElementById('reg-nome').value.trim();
         const nick = document.getElementById('reg-nick').value.trim();
@@ -187,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!nome || !nick || cpfBruto.length !== 11 || !senha || senha.length < 4) {
             erroRegistro.textContent = 'Preencha todos os campos corretamente (senha mínimo 4 caracteres).';
-            erroRegistro.style.display = 'block';
+            erroRegistro.classList.add('visible');
             return;
         }
 
@@ -201,18 +273,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const cpfExistente = todos.find(c => c.cpf === cpfFormatado);
             if (cpfExistente) {
                 erroRegistro.textContent = 'CPF já cadastrado.';
-                erroRegistro.style.display = 'block';
+                erroRegistro.classList.add('visible');
                 return;
             }
 
             const nickExistente = todos.find(c => c.apelido && c.apelido.toLowerCase() === nick.toLowerCase());
             if (nickExistente) {
                 erroRegistro.textContent = 'Apelido já está em uso. Escolha outro.';
-                erroRegistro.style.display = 'block';
+                erroRegistro.classList.add('visible');
                 return;
             }
 
-            // Cria usuário
+            // Cria o usuário
             const novoId = await db.clientes.add({
                 nome,
                 apelido: nick,
@@ -222,9 +294,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 nascimento: '2000-01-01',
                 livros_lidos: 0,
                 media_estrelas: 0,
-                lendo_agora: ''
+                lendo_agora: '',
+                bio: ''
             });
 
+            // Fecha o modal
             modalRegistro.classList.remove('active');
 
             // Login automático
@@ -238,7 +312,24 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (err) {
             console.error('Erro no registro:', err);
             erroRegistro.textContent = 'Erro ao cadastrar. Tente novamente.';
-            erroRegistro.style.display = 'block';
+            erroRegistro.classList.add('visible');
         }
     });
+
+    // ==========================================
+    // 11. FUNÇÃO PARA MOSTRAR/OCULTAR SENHA (global)
+    // ==========================================
+    window.toggleSenha = function(inputId, botao) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        if (input.type === 'password') {
+            input.type = 'text';
+            botao.textContent = '🙈';
+        } else {
+            input.type = 'password';
+            botao.textContent = '👁️';
+        }
+    };
+
+    console.log('✅ Landing page carregada.');
 });

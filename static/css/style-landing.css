@@ -1,13 +1,15 @@
-/* Reset e base */
+/* ========================================
+   RESET E BASE
+   ======================================== */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Roboto, sans-serif;
 }
 
 body {
-    background: #6a1b9a; /* roxo */
+    font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+    background: var(--cor-fundo);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -15,169 +17,33 @@ body {
     overflow: hidden;
 }
 
-/* Container principal com duas colunas */
+/* ========================================
+   CORES (MUDE AQUI)
+   ======================================== */
+:root {
+    --cor-fundo: rgb(3, 2, 65);          /* fundo geral */
+    --cor-fundo-rgb: 3, 2, 65; /* mesmo valor em RGB */
+    --cor-destaque: #500465;       /* roxo mais claro para botões/hover */
+    --sombra: 0 20px 60px rgba(0,0,0,0.35);
+    --borda-card: 1px solid rgba(255,255,255,0.15);
+}
+
+/* ========================================
+   LAYOUT PRINCIPAL
+   ======================================== */
 .landing-container {
     display: flex;
     width: 100vw;
     height: 100vh;
-    background: #6a1b9a; /* fundo roxo */
+    background: var(--cor-fundo);
 }
 
-/* Coluna da imagem (esquerda) */
-.col-imagem {
-    flex: 1; /* ocupa metade da largura */
-    height: 100vh;
-    overflow: hidden;
-}
-
-.col-imagem img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* cobre o espaço sem distorcer */
-    display: block;
-}
-
-/* Coluna do formulário (direita) */
-.col-form {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: #6a1b9a; /* roxo */
-    padding: 20px;
-}
-
-/* Caixa de login (branca) */
-.card {
-    background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    padding: 40px 35px;
-    max-width: 420px;
-    width: 100%;
-    text-align: center;
-}
-
-.card h1 {
-    color: #2c3e50;
-    font-weight: 600;
-    margin-bottom: 8px;
-    font-size: 2rem;
-}
-
-.card p {
-    color: #5d6d7e;
-    margin-bottom: 28px;
-    font-size: 0.95rem;
-}
-
-form {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    text-align: left;
-}
-
-.campo {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-label {
-    font-weight: 500;
-    font-size: 0.85rem;
-    color: #2c3e50;
-}
-
-input {
-    padding: 10px 14px;
-    border: 1px solid #dce1e6;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    transition: border 0.2s, box-shadow 0.2s;
-    background: #fff;
-    width: 100%;
-}
-
-input:focus {
-    border-color: #6a1b9a;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(106, 27, 154, 0.15);
-}
-
-button {
-    background: #6a1b9a;
-    color: #fff;
-    border: none;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-    margin-top: 6px;
-}
-
-button:hover {
-    background: #4a148c;
-}
-
-#erro {
-    margin-top: 12px;
-    font-size: 0.9rem;
-    color: #e74c3c;
-}
-
-.rodape {
-    margin-top: 25px;
-    font-size: 0.8rem;
-    color: #888;
-}
-
-/* Responsivo: em telas menores, a imagem some e o formulário ocupa tudo */
-@media (max-width: 768px) {
-    .col-imagem {
-        display: none;
-    }
-    .col-form {
-        flex: 1;
-        background: #6a1b9a;
-        padding: 20px;
-    }
-    .card {
-        max-width: 100%;
-    }
-}
-
-/* Reset e base */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Roboto, sans-serif;
-}
-
-body {
-    background: #6a1b9a;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    overflow: hidden;
-}
-
-.landing-container {
-    display: flex;
-    width: 100vw;
-    height: 100vh;
-    background: #6a1b9a;
-}
-
+/* Coluna da imagem */
 .col-imagem {
     flex: 1;
     height: 100vh;
     overflow: hidden;
+    position: relative;
 }
 
 .col-imagem img {
@@ -185,44 +51,97 @@ body {
     height: 100%;
     object-fit: cover;
     display: block;
+    filter: brightness(0.95) saturate(1.05);
 }
 
+/* Degrade sobre a imagem */
+.col-imagem::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(
+        to right,
+        rgba(var(--cor-fundo-rgb), 0) 30%,
+        rgba(var(--cor-fundo-rgb), 0.6) 70%,
+        rgba(var(--cor-fundo-rgb), 1) 100%
+    );
+    pointer-events: none;
+}
+
+/* Coluna do formulário */
 .col-form {
     flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #6a1b9a;
+    background: var(--cor-fundo);
     padding: 20px;
 }
 
+/* ========================================
+   CAIXA DE LOGIN (branca com glassmorphism)
+   ======================================== */
 .card {
-    background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    padding: 40px 35px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 20px;
+    border: var(--borda-card);
+    box-shadow: var(--sombra);
+    padding: 44px 38px 38px;
     max-width: 420px;
     width: 100%;
     text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+}
+
+/* Linha decorativa no topo */
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--cor-destaque), #ab47bc, var(--cor-destaque));
+    background-size: 200% 100%;
+    animation: gradienteLinha 4s ease infinite;
+}
+
+@keyframes gradienteLinha {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
 }
 
 .card h1 {
-    color: #2c3e50;
-    font-weight: 600;
-    margin-bottom: 8px;
+    color: #1a1a2e;
+    font-weight: 700;
     font-size: 2rem;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
 }
 
-.card p {
-    color: #5d6d7e;
+.card h1 span { color: var(--cor-destaque); }
+
+.card .subtitulo {
+    color: #6b6b80;
+    font-size: 0.9rem;
     margin-bottom: 28px;
-    font-size: 0.95rem;
 }
 
+/* ========================================
+   FORMULÁRIO
+   ======================================== */
 form {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 16px;
     text-align: left;
 }
 
@@ -232,143 +151,306 @@ form {
     gap: 4px;
 }
 
-label {
-    font-weight: 500;
-    font-size: 0.85rem;
-    color: #2c3e50;
+.campo label {
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: #3d3d54;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-input {
-    padding: 10px 14px;
-    border: 1px solid #dce1e6;
-    border-radius: 8px;
+.campo input {
+    padding: 12px 16px;
+    border: 2px solid #e8e8ee;
+    border-radius: 12px;
     font-size: 0.95rem;
-    transition: border 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+    background: #f8f8fc;
+    color: #1a1a2e;
+    width: 100%;
+    transition: all 0.25s;
+}
+
+.campo input:focus {
+    border-color: var(--cor-destaque);
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(var(--cor-fundo-rgb), 0.12);
     background: #fff;
+}
+
+.campo input::placeholder {
+    color: #a8a8b8;
+}
+
+/* ========================================
+   CAMPO DE SENHA COM BOTÃO INTERNO
+   ======================================== */
+.senha-wrapper {
+    position: relative;
     width: 100%;
 }
 
-input:focus {
-    border-color: #6a1b9a;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(106, 27, 154, 0.15);
+.senha-wrapper input {
+    padding-right: 48px;
 }
 
-button {
-    background: #6a1b9a;
+.btn-mostrar-senha {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 4px 8px;
+    color: #999;
+    transition: color 0.2s;
+    line-height: 1;
+}
+
+.btn-mostrar-senha:hover {
+    color: var(--cor-destaque);
+}
+
+/* ========================================
+   BOTÕES
+   ======================================== */
+.btn-entrar {
+    background: var(--cor-destaque);
     color: #fff;
     border: none;
-    padding: 12px;
-    border-radius: 8px;
+    padding: 14px;
+    border-radius: 12px;
     font-size: 1rem;
     font-weight: 600;
+    font-family: inherit;
     cursor: pointer;
-    transition: background 0.2s;
-    margin-top: 6px;
+    transition: all 0.25s;
+    margin-top: 4px;
 }
 
-button:hover {
-    background: #4a148c;
+.btn-entrar:hover {
+    background: var(--cor-fundo);
+    transform: scale(1.01);
+    box-shadow: 0 8px 24px rgba(var(--cor-fundo-rgb), 0.35);
 }
 
-.btn-secundario {
+.btn-entrar:active {
+    transform: scale(0.98);
+}
+
+.btn-registrar {
     background: transparent;
-    color: #6a1b9a;
-    border: 1px solid #6a1b9a;
-    margin-top: 0;
+    color: var(--cor-destaque);
+    border: 2px solid var(--cor-destaque);
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.25s;
+    margin-top: 12px;
+    width: 100%;
 }
 
-.btn-secundario:hover {
-    background: #6a1b9a;
+.btn-registrar:hover {
+    background: var(--cor-destaque);
     color: #fff;
+    box-shadow: 0 8px 24px rgba(var(--cor-fundo-rgb), 0.25);
 }
 
 #erro {
     margin-top: 12px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #e74c3c;
+    background: rgba(231,76,60,0.08);
+    padding: 10px 14px;
+    border-radius: 8px;
+    display: none;
 }
 
-/* ===== MODAL ===== */
+#erro.visible { display: block; }
+
+/* ========================================
+   MODAL (registro)
+   ======================================== */
 .modal-overlay {
+    display: none;
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
 }
+
+.modal-overlay.active { display: flex; }
 
 .modal-content {
-    background: #fff;
-    border-radius: 16px;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 20px;
     max-width: 500px;
-    width: 90%;
-    padding: 35px;
+    width: 92%;
+    padding: 38px 34px 34px;
     position: relative;
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.4);
     max-height: 90vh;
     overflow-y: auto;
+    border: var(--borda-card);
 }
 
-.fechar {
+.modal-content::before {
+    content: '';
     position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 28px;
-    font-weight: bold;
-    color: #aaa;
-    cursor: pointer;
-    transition: color 0.2s;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--cor-destaque), #ab47bc, var(--cor-destaque));
+    background-size: 200% 100%;
+    animation: gradienteLinha 4s ease infinite;
 }
 
-.fechar:hover {
+.modal-content .fechar {
+    position: absolute;
+    top: 16px; right: 20px;
+    font-size: 28px;
+    font-weight: 300;
+    color: #999;
+    cursor: pointer;
+    background: none;
+    border: none;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.modal-content .fechar:hover {
     color: #333;
+    transform: rotate(90deg);
 }
 
 .modal-content h2 {
-    color: #2c3e50;
-    margin-bottom: 20px;
+    color: #1a1a2e;
+    font-size: 1.5rem;
+    font-weight: 700;
     text-align: center;
+    margin-bottom: 6px;
+}
+
+.modal-content h2 span { color: var(--cor-destaque); }
+
+.modal-content .subtitulo-modal {
+    text-align: center;
+    color: #6b6b80;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
 }
 
 .btn-primario {
-    background: #6a1b9a;
+    background: var(--cor-destaque);
     color: #fff;
     border: none;
-    padding: 12px;
-    border-radius: 8px;
+    padding: 14px;
+    border-radius: 12px;
     font-size: 1rem;
     font-weight: 600;
+    font-family: inherit;
     cursor: pointer;
-    transition: background 0.2s;
-    margin-top: 10px;
+    transition: all 0.25s;
     width: 100%;
+    margin-top: 6px;
 }
 
 .btn-primario:hover {
-    background: #4a148c;
+    background: var(--cor-fundo);
+    box-shadow: 0 8px 24px rgba(var(--cor-fundo-rgb), 0.35);
+}
+
+#erro-registro {
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: #e74c3c;
+    background: rgba(231,76,60,0.08);
+    padding: 10px 14px;
+    border-radius: 8px;
+    display: none;
+}
+
+#erro-registro.visible { display: block; }
+
+/* ========================================
+   RESPONSIVO
+   ======================================== */
+@media (max-width: 768px) {
+    .col-imagem { display: none; }
+    .col-form { flex: 1; padding: 16px; background: var(--cor-fundo); }
+    .card {
+        max-width: 100%;
+        padding: 32px 24px;
+        background: rgba(255,255,255,0.95);
+    }
+    .modal-content {
+        width: 95%;
+        padding: 28px 20px;
+    }
+}
+
+/* ========================================
+   SCROLL DO MODAL
+   ======================================== */
+.modal-content::-webkit-scrollbar {
+    width: 6px;
+}
+.modal-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+.modal-content::-webkit-scrollbar-thumb {
+    background: var(--cor-destaque);
+    border-radius: 4px;
+}
+.modal-content::-webkit-scrollbar-thumb:hover {
+    background: var(--cor-fundo);
+}
+
+/* ========================================
+   FRASE SOBRE A IMAGEM
+   ======================================== */
+.frase-container {
+    position: absolute;
+    bottom: 60px;
+    left: 0;
+    width: 100%;
+    padding: 0 40px;
+    text-align: center;
+    pointer-events: none; /* não atrapalha cliques */
+    z-index: 2;
+}
+
+#frase-destaque {
+    color: #ffffff;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 1.6rem;
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.5;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 2px 8px rgba(0, 0, 0, 0.5);
+    max-width: 80%;
+    margin: 0 auto;
+    letter-spacing: 0.5px;
+    transition: opacity 0.5s ease;
 }
 
 /* Responsivo */
 @media (max-width: 768px) {
-    .col-imagem {
-        display: none;
+    .frase-container {
+        bottom: 30px;
+        padding: 0 20px;
     }
-    .col-form {
-        flex: 1;
-        padding: 20px;
-    }
-    .card {
-        max-width: 100%;
-    }
-    .modal-content {
-        width: 95%;
-        padding: 25px;
+    #frase-destaque {
+        font-size: 1.2rem;
+        max-width: 95%;
     }
 }
