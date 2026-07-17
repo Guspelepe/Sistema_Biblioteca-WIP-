@@ -7,25 +7,31 @@
     <link rel="stylesheet" href="static/css/style-landing.css">
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h1>Biblioteca</h1>
-            <p>Digite suas credenciais para acessar</p>
-            <form id="login-form">
-                <div class="campo">
-                    <label for="identificador">Usuário ou CPF</label>
-                    <input type="text" id="identificador" placeholder="Ex: ACESSORESTRITO ou 111.222.333-44" required>
-                </div>
-                <div class="campo">
-                    <label for="senha">Senha</label>
-                    <input type="password" id="senha" placeholder="Digite sua senha" required>
-                </div>
-                <button type="submit">Entrar</button>
-            </form>
-            <p id="erro" style="color: #e74c3c; display: none; margin-top: 15px;">Credenciais inválidas. Tente novamente.</p>
-            <p style="margin-top: 25px; font-size: 0.8rem; color: #888;">
-                <strong>Bibliotecário:</strong> ACESSORESTRITO / 1234
-            </p>
+    <div class="landing-container">
+        <!-- Coluna da imagem (esquerda) -->
+        <div class="col-imagem" id="col-imagem">
+            <img id="imagem-destaque" src="" alt="Leitor">
+        </div>
+
+        <!-- Coluna do formulário (direita) -->
+        <div class="col-form">
+            <div class="card">
+                <h1>📚 Biblioteca</h1>
+                <p>Digite suas credenciais para acessar</p>
+                <form id="login-form">
+                    <div class="campo">
+                        <label for="identificador">Usuário ou CPF</label>
+                        <input type="text" id="identificador" placeholder="Ex: ACESSORESTRITO ou 111.222.333-44" required>
+                    </div>
+                    <div class="campo">
+                        <label for="senha">Senha</label>
+                        <input type="password" id="senha" placeholder="Digite sua senha" required>
+                    </div>
+                    <button type="submit">Entrar</button>
+                </form>
+                <p id="erro" style="display: none;">Credenciais inválidas. Tente novamente.</p>
+                <p class="rodape"><strong>Bibliotecário:</strong> ACESSORESTRITO / 1234</p>
+            </div>
         </div>
     </div>
 
