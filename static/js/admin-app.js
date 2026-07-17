@@ -44,11 +44,22 @@ document.addEventListener('DOMContentLoaded', function() {
             html += `<p>Nenhum usuário cadastrado.</p>`;
         } else {
             html += `<table>
-                <thead><tr><th>Nome</th><th>CPF</th><th>Livro Alugado</th></tr></thead><tbody>`;
+                <thead><tr><th>Foto</th><th>Nome</th><th>CPF</th><th>Livros Lidos</th><th>Média</th><th>Lendo Agora</th><th>Livro Alugado</th></tr></thead><tbody>`;
             clientes.forEach(c => {
                 const livro = mapaAluguel[c.id] || '—';
-                const status = livro !== '—' ? `<span class="status-ativo">${livro}</span>` : '—';
-                html += `<tr><td>${c.nome}</td><td>${c.cpf}</td><td>${status}</td></tr>`;
+                const fotoHtml = c.foto ? `<img src="${c.foto}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">` : '—';
+                const media = c.media_estrelas ? c.media_estrelas.toFixed(1) : '—';
+                const lendo = c.lendo_agora || '—';
+                const livrosLidos = c.livros_lidos || '—';
+                html += `<tr>
+                    <td>${fotoHtml}</td>
+                    <td>${c.nome}</td>
+                    <td>${c.cpf}</td>
+                    <td>${livrosLidos}</td>
+                    <td>${media}</td>
+                    <td>${lendo}</td>
+                    <td>${livro !== '—' ? `<span class="status-ativo">${livro}</span>` : '—'}</td>
+                </tr>`;
             });
             html += `</tbody></table>`;
         }
@@ -190,6 +201,40 @@ document.addEventListener('DOMContentLoaded', function() {
             notificar(`Aluguel de "${livroTitulo}" realizado com sucesso!`);
             renderAlugar();
         });
+
+                async function renderUsuarios() {
+            const clientes = await db.clientes.toArray();
+            const alugueisAtivos = await db.alugueis.where({ status: 'ativo' }).toArray();
+            const mapaAluguel = {};
+            alugueisAtivos.forEach(a => { mapaAluguel[a.cliente_id] = a.livro; });
+
+            let html = `<div class="card"><h3>Usuários Cadastrados</h3>`;
+            if (clientes.length === 0) {
+                html += `<p>Nenhum usuário cadastrado.</p>`;
+            } else {
+                html += `<table>
+                    <thead><tr><th>Foto</th><th>Nome</th><th>CPF</th><th>Livros Lidos</th><th>Média</th><th>Lendo Agora</th><th>Livro Alugado</th></tr></thead><tbody>`;
+                clientes.forEach(c => {
+                    const livro = mapaAluguel[c.id] || '—';
+                    const fotoHtml = c.foto ? `<img src="${c.foto}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">` : '—';
+                    const media = c.media_estrelas ? c.media_estrelas.toFixed(1) : '—';
+                    const lendo = c.lendo_agora || '—';
+                    const livrosLidos = c.livros_lidos || '—';
+                    html += `<tr>
+                        <td>${fotoHtml}</td>
+                        <td>${c.nome}</td>
+                        <td>${c.cpf}</td>
+                        <td>${livrosLidos}</td>
+                        <td>${media}</td>
+                        <td>${lendo}</td>
+                        <td>${livro !== '—' ? `<span class="status-ativo">${livro}</span>` : '—'}</td>
+                    </tr>`;
+                });
+                html += `</tbody></table>`;
+            }
+            html += `</div>`;
+            contentArea.innerHTML = html;
+        }
     }
 
     async function renderDevolver() {
