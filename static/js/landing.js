@@ -16,47 +16,42 @@ document.addEventListener('DOMContentLoaded', function() {
         imgElement.alt = 'Imagem de leitor';
     }
 
-    // ===== FRASES =====
-    const FRASES = [
-        { texto: "A leitura é uma forma de viajar sem sair do lugar.", autor: "Eça de Queirós" },
-        { texto: "Ler é sonhar pela mão de outro.", autor: "Fernando Pessoa" },
-        { texto: "O livro é um mestre que fala sem voz.", autor: "Provérbio chinês" },
-        { texto: "A vida é muito curta para ser pequena.", autor: "Benjamin Disraeli" },
-        { texto: "Não há nada mais prazeroso do que aprender.", autor: "Marcus Tullius Cicero" },
-        { texto: "O que vale na vida não é o ponto de partida, mas a caminhada.", autor: "Milton Nascimento" },
-        { texto: "A imaginação governa o mundo.", autor: "Napoleão Bonaparte" },
-        { texto: "Quem lê vive muitas vidas.", autor: "George R.R. Martin" },
-        { texto: "Um leitor vive mil vidas antes de morrer.", autor: "George R.R. Martin" },
-        { texto: "A leitura é para a mente o que o exercício é para o corpo.", autor: "Joseph Addison" },
-        { texto: "O importante é não parar de questionar.", autor: "Albert Einstein" },
-        { texto: "A beleza está nos olhos de quem vê.", autor: "Oscar Wilde" },
-        { texto: "A esperança é a última que morre.", autor: "Provérbio" },
-        { texto: "Não existem limites para o conhecimento.", autor: "Carl Sagan" },
-        { texto: "A verdade é como o sol: pode ser ofuscante, mas não pode ser negada.", autor: "Buda" },
-        { texto: "Ler é abrir uma porta para o mundo.", autor: "Monteiro Lobato" },
-        { texto: "O saber não ocupa lugar.", autor: "Provérbio" },
-        { texto: "A vida é uma viagem, não um destino.", autor: "Ralph Waldo Emerson" },
-        { texto: "O amor é a única força capaz de transformar um inimigo em amigo.", autor: "Martin Luther King" },
-        { texto: "A verdadeira viagem de descobrimento não consiste em procurar novas paisagens, mas em ter novos olhos.", autor: "Marcel Proust" },
-        { texto: "A leitura nos dá asas para voar.", autor: "Victor Hugo" },
-        { texto: "O futuro pertence àqueles que acreditam na beleza de seus sonhos.", autor: "Eleanor Roosevelt" },
-        { texto: "A gentileza é a linguagem que o surdo ouve e o cego vê.", autor: "Mark Twain" },
-        { texto: "A vida é o que acontece enquanto você faz planos.", autor: "John Lennon" },
-        { texto: "Não tenha medo de ser feliz.", autor: "Chico Xavier" },
-        { texto: "O destino não é uma questão de sorte, mas de escolha.", autor: "William Jennings Bryan" },
-        { texto: "A criatividade é a inteligência se divertindo.", autor: "Albert Einstein" },
-        { texto: "A força não vem da capacidade física, mas de uma vontade indomável.", autor: "Mahatma Gandhi" },
-        { texto: "A jornada mais longa começa com um único passo.", autor: "Lao Tsé" },
-        { texto: "O coração tem razões que a própria razão desconhece.", autor: "Blaise Pascal" }
-    ];
+    // ===== AGUARDA BANCO (definida antes de usar) =====
+    async function aguardarBanco() {
+        return new Promise((resolve) => {
+            if (typeof db !== 'undefined') {
+                resolve();
+                return;
+            }
+            const interval = setInterval(() => {
+                if (typeof db !== 'undefined') {
+                    clearInterval(interval);
+                    resolve();
+                }
+            }, 200);
+        });
+    }
 
-    function exibirFrase() {
+    // ===== EXIBE FRASE DO BANCO =====
+    async function exibirFrase() {
         const container = document.getElementById('frase-destaque');
         if (!container) return;
-        const randomIndex = Math.floor(Math.random() * FRASES.length);
-        const frase = FRASES[randomIndex];
-        container.innerHTML = `"${frase.texto}"<br><span style="font-size:0.9rem; font-weight:300; opacity:0.85;">— ${frase.autor}</span>`;
+        await aguardarBanco();
+        try {
+            const frases = await db.frases.toArray();
+            if (frases.length === 0) {
+                container.innerHTML = '"A leitura é uma aventura sem fim."';
+                return;
+            }
+            const randomIndex = Math.floor(Math.random() * frases.length);
+            const frase = frases[randomIndex];
+            container.innerHTML = `"${frase.texto}"<br><span style="font-size:0.9rem; font-weight:300; opacity:0.85;">— ${frase.autor}</span>`;
+        } catch (e) {
+            console.warn('Erro ao carregar frase:', e);
+            container.innerHTML = '"A leitura é uma aventura sem fim."';
+        }
     }
+    // Chama após o banco estar pronto (evita dupla execução)
     exibirFrase();
 
     // ===== ELEMENTOS DOM =====
@@ -77,22 +72,6 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = 'user.html';
         }
         return;
-    }
-
-    // ===== AGUARDA BANCO =====
-    async function aguardarBanco() {
-        return new Promise((resolve) => {
-            if (typeof db !== 'undefined') {
-                resolve();
-                return;
-            }
-            const interval = setInterval(() => {
-                if (typeof db !== 'undefined') {
-                    clearInterval(interval);
-                    resolve();
-                }
-            }, 200);
-        });
     }
 
     // ===== BUSCA USUÁRIO =====
@@ -144,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return cliente || null;
     }
 
-    // ===== LOGIN =====
+    // ===== LOGIN (sem backdoor) =====
     formLogin.addEventListener('submit', async function(e) {
         e.preventDefault();
         erroLogin.classList.remove('visible');
@@ -152,15 +131,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const identificador = document.getElementById('identificador').value.trim();
         const senha = document.getElementById('senha').value.trim();
-
-        // Bibliotecário
-        if (identificador === 'ACESSORESTRITO' && senha === '1234') {
-            sessionStorage.setItem('logado', 'true');
-            sessionStorage.setItem('perfil', 'bibliotecario');
-            sessionStorage.setItem('usuario', 'Bibliotecário');
-            window.location.href = 'admin.html';
-            return;
-        }
 
         try {
             await aguardarBanco();

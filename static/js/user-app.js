@@ -187,7 +187,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const status = aluguel.status === 'ativo' ? 'Ativo' : 'Devolvido';
                 const statusClass = aluguel.status === 'ativo' ? 'status-disponivel' : 'status-alugado';
                 const dataLoc = aluguel.data_locacao.split('-').reverse().join('/');
-                const devPrev = aluguel.data_devolucao_prevista;
+                const devPrev = aluguel.data_devolucao_prevista 
+                    ? new Date(aluguel.data_devolucao_prevista + 'T00:00:00').toLocaleDateString('pt-BR') 
+                    : '-';
                 const devReal = aluguel.data_devolucao_real ? aluguel.data_devolucao_real.split('-').reverse().join('/') : '-';
 
                 let acoes = '';
@@ -422,11 +424,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             const partes = aluguel.data_devolucao_prevista.split('/');
-            const data = new Date(partes[2], partes[1] - 1, partes[0]);
+            const data = new Date(aluguel.data_devolucao_prevista + 'T00:00:00');
             data.setDate(data.getDate() + 7);
-            const novaData = data.toLocaleDateString('pt-BR');
-            await db.alugueis.update(aluguelId, { data_devolucao_prevista: novaData });
-            notificar(`Aluguel renovado até ${novaData}.`);
+            const novaDataISO = data.toISOString().split('T')[0];
+            await db.alugueis.update(aluguelId, { data_devolucao_prevista: novaDataISO });
+            // Notificar com formato pt-BR
+            const novaDataBR = data.toLocaleDateString('pt-BR');
+            notificar(`Aluguel renovado até ${novaDataBR}.`);
             renderMeusLivros();
         } catch (err) {
             console.error('Erro ao renovar:', err);

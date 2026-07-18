@@ -169,7 +169,8 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div>
                 <label for="data-devolucao-prevista">Devolução Prevista (automática +7 dias)</label>
-                <input type="text" id="data-devolucao-prevista" readonly>
+                <input type="text" id="data-devolucao-prevista" readonly placeholder="Automático">
+                <input type="hidden" id="data-devolucao-prevista-iso">
             </div>
             <div class="full-width">
                 <button type="submit">Confirmar Aluguel</button>
@@ -182,9 +183,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = new Date(this.value + 'T00:00:00');
             if (!isNaN(data)) {
                 data.setDate(data.getDate() + 7);
+                const iso = data.toISOString().split('T')[0];
                 document.getElementById('data-devolucao-prevista').value = data.toLocaleDateString('pt-BR');
+                document.getElementById('data-devolucao-prevista-iso').value = iso;
             } else {
                 document.getElementById('data-devolucao-prevista').value = '';
+                document.getElementById('data-devolucao-prevista-iso').value = ''; 
             }
         });
 
@@ -194,6 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const livroTitulo = document.getElementById('livro-alugar').value;
             const dataLocacao = document.getElementById('data-locacao').value;
             const dataDevolucaoPrevista = document.getElementById('data-devolucao-prevista').value;
+            const dataDevolucaoPrevistaIso = document.getElementById('data-devolucao-prevista-iso').value;
 
             if (!clienteId || !livroTitulo || !dataLocacao) {
                 notificar('Preencha todos os campos.', 'erro');

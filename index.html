@@ -84,23 +84,9 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/dexie@3.2.3/dist/dexie.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.3/dist/dexie.js"></script>
     <script src="static/js/db.js"></script>
     <script src="static/js/landing.js"></script>
-
-    <script>
-        // ===== FUNÇÃO PARA MOSTRAR/OCULTAR SENHA =====
-        function toggleSenha(inputId, botao) {
-            const input = document.getElementById(inputId);
-            if (!input) return;
-            if (input.type === 'password') {
-                input.type = 'text';
-                botao.textContent = '🙈';
-            } else {
-                input.type = 'password';
-                botao.textContent = '👁️';
-            }
-        }
-    </script>
+    
 </body>
 </html>
