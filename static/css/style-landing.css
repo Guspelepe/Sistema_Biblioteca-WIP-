@@ -454,3 +454,13 @@ form {
         max-width: 95%;
     }
 }
+
+/* ========================================
+   Validação
+   ======================================== */
+.msg-validacao {
+    font-size: 0.75rem;
+    margin-top: 2px;
+    display: block;
+    min-height: 1em;
+}

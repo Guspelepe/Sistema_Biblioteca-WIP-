@@ -36,7 +36,9 @@ document.addEventListener('DOMContentLoaded', function() {
     async function renderUsuarios() {
         await aguardarBanco();
         const clientes = await db.clientes.toArray();
-        const alugueisAtivos = await db.alugueis.where({ status: 'ativo' }).toArray();
+        
+        // CORREÇÃO DEXIE: .where() correto para buscar status ativo
+        const alugueisAtivos = await db.alugueis.where('status').equals('ativo').toArray();
         const mapaAluguel = {};
         alugueisAtivos.forEach(a => { mapaAluguel[a.cliente_id] = a.livro; });
 
@@ -104,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             html += `<table>
                 <thead><tr><th>Cliente</th><th>Livro</th><th>Data Locação</th><th>Status</th><th>Devolução Real</th></tr></thead><tbody>`;
-            recentes.forEach(a => {
+             recentes.forEach(a => {
                 const nomeCliente = mapaClientes[a.cliente_id] || 'Desconhecido';
                 const status = a.status === 'ativo' ? 'Ativo' : 'Devolvido';
                 const statusClass = a.status === 'ativo' ? 'status-ativo' : 'status-devolvido';
@@ -181,21 +183,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const clienteId = parseInt(document.getElementById('cliente-alugar').value);
             const livroTitulo = document.getElementById('livro-alugar').value;
             const dataLocacao = document.getElementById('data-locacao').value;
-            const dataDevolucaoPrevista = document.getElementById('data-devolucao-prevista').value;
-            const dataDevolucaoPrevistaIso = document.getElementById('data-devolucao-prevista-iso').value;
 
             if (!clienteId || !livroTitulo || !dataLocacao) {
                 notificar('Preencha todos os campos.', 'erro');
                 return;
             }
 
-            const aluguelAtivo = await db.alugueis.where({ cliente_id: clienteId, status: 'ativo' }).first();
+            // CORREÇÃO DEXIE: Multi-campos usando filter() para evitar quebra de sintaxe
+            const aluguelAtivo = await db.alugueis.where('cliente_id').equals(clienteId).filter(a => a.status === 'ativo').first();
             if (aluguelAtivo) {
                 notificar('Cliente já possui um livro alugado.', 'erro');
                 return;
             }
 
-            const livroAlugado = await db.alugueis.where({ livro: livroTitulo, status: 'ativo' }).first();
+            // CORREÇÃO DEXIE: Multi-campos usando filter()
+            const livroAlugado = await db.alugueis.where('livro').equals(livroTitulo).filter(a => a.status === 'ativo').first();
             if (livroAlugado) {
                 notificar('Este livro já está alugado.', 'erro');
                 return;
@@ -205,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cliente_id: clienteId,
                 livro: livroTitulo,
                 data_locacao: dataLocacao,
-                data_devolucao_prevista: dataDevolucaoPrevista,
+                data_devolucao_prevista: document.getElementById('data-devolucao-prevista').value,
                 status: 'ativo'
             });
 
@@ -250,7 +252,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 selectLivro.innerHTML = '<option value="">Selecione um cliente primeiro</option>';
                 return;
             }
-            const alugueisAtivos = await db.alugueis.where({ cliente_id: clienteId, status: 'ativo' }).toArray();
+            // CORREÇÃO DEXIE: query correta usando filter para achar aluguéis ativos do cliente
+            const alugueisAtivos = await db.alugueis.where('cliente_id').equals(clienteId).filter(a => a.status === 'ativo').toArray();
             selectLivro.disabled = false;
             selectLivro.innerHTML = '<option value="">Selecione o livro...</option>';
             alugueisAtivos.forEach(a => {
@@ -291,8 +294,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     <input type="text" id="nome" required>
                 </div>
                 <div>
+                    <label for="apelido">Apelido (nick)</label>
+                    <input type="text" id="apelido" placeholder="Como será chamado" required>
+                    <span id="msg-apelido-admin" class="msg-validacao"></span>
+                </div>
+                <div>
                     <label for="cpf">CPF</label>
                     <input type="text" id="cpf" placeholder="000.000.000-00" required maxlength="14" oninput="mascararCPF(this)">
+                    <span id="msg-cpf-admin" class="msg-validacao"></span>
                 </div>
                 <div>
                     <label for="nascimento">Data de Nascimento</label>
@@ -309,30 +318,85 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>`;
         contentArea.innerHTML = html;
 
+        // Verificação de CPF
+        document.getElementById('cpf').addEventListener('blur', async function() {
+            const cpfBruto = this.value.replace(/\D/g, '');
+            const span = document.getElementById('msg-cpf-admin');
+            if (!span) return;
+            if (cpfBruto.length === 11 && validarCPF(cpfBruto)) {
+                await aguardarBanco();
+                const cpfFormatado = cpfBruto.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                const existente = await db.clientes.where('cpf').equals(cpfFormatado).first();
+                span.textContent = existente ? '❌ CPF já cadastrado.' : '✅ CPF disponível.';
+                span.style.color = existente ? '#e74c3c' : '#27ae60';
+            } else {
+                span.textContent = cpfBruto.length > 0 ? '❌ CPF inválido.' : '';
+                span.style.color = '#e74c3c';
+            }
+        });
+
+        // Verificação de apelido
+        document.getElementById('apelido').addEventListener('blur', async function() {
+            const apelido = this.value.trim();
+            const span = document.getElementById('msg-apelido-admin');
+            if (!span || !apelido) {
+                if (span) span.textContent = '';
+                return;
+            }
+            await aguardarBanco();
+            const existente = await db.clientes.where('apelido').equalsIgnoreCase(apelido).first();
+            span.textContent = existente ? '❌ Apelido já está em uso.' : '✅ Apelido disponível.';
+            span.style.color = existente ? '#e74c3c' : '#27ae60';
+        });
+
+        // Submit do formulário de cadastro
         document.getElementById('form-cadastro-usuario').addEventListener('submit', async (e) => {
             e.preventDefault();
             const nome = document.getElementById('nome').value.trim();
+            const apelido = document.getElementById('apelido').value.trim();
             const cpfBruto = document.getElementById('cpf').value.replace(/\D/g, '');
             const nascimento = document.getElementById('nascimento').value;
             const senha = document.getElementById('senha-cliente').value;
 
-            // Valida CPF
             if (!validarCPF(cpfBruto)) {
                 notificar('CPF inválido. Verifique os dígitos.', 'erro');
                 return;
             }
 
-            if (!nome || cpfBruto.length !== 11 || !nascimento || !senha) {
+            if (!nome || !apelido || cpfBruto.length !== 11 || !nascimento || !senha) {
                 notificar('Preencha todos os campos corretamente.', 'erro');
                 return;
             }
+            
             const cpfFormatado = cpfBruto.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-            const existente = await db.clientes.where({ cpf: cpfFormatado }).first();
-            if (existente) {
+            
+            // Verifica duplicidade de CPF
+            const cpfExistente = await db.clientes.where('cpf').equals(cpfFormatado).first();
+            if (cpfExistente) {
                 notificar('CPF já cadastrado.', 'erro');
                 return;
             }
-            await db.clientes.add({ nome, cpf: cpfFormatado, nascimento, senha });
+
+            // Verifica duplicidade de apelido
+            const apelidoExistente = await db.clientes.where('apelido').equalsIgnoreCase(apelido).first();
+            if (apelidoExistente) {
+                notificar('Apelido já está em uso.', 'erro');
+                return;
+            }
+            
+            await db.clientes.add({ 
+                nome, 
+                apelido, 
+                cpf: cpfFormatado, 
+                nascimento, 
+                senha,
+                livros_lidos: 0, 
+                media_estrelas: 0, 
+                lendo_agora: '', 
+                bio: '',
+                foto: ''
+            });
+            
             notificar(`Usuário ${nome} cadastrado com sucesso!`);
             document.getElementById('form-cadastro-usuario').reset();
             renderUsuarios();
@@ -423,4 +487,4 @@ document.addEventListener('DOMContentLoaded', function() {
         loginModal.style.display = 'flex';
         contentArea.innerHTML = '<p>Faça login para acessar o sistema.</p>';
     }
-});
+}); 

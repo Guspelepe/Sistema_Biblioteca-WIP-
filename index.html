@@ -82,6 +82,17 @@
                     <label for="reg-foto">URL da foto (opcional)</label>
                     <input type="url" id="reg-foto" placeholder="https://exemplo.com/foto.jpg">
                 </div>
+                <!-- Mensagens de validação -->
+                <div class="campo">
+                    <label for="reg-cpf">CPF</label>
+                    <input type="text" id="reg-cpf" ...>
+                    <span id="msg-cpf" class="msg-validacao"></span>
+                </div>
+                <div class="campo">
+                    <label for="reg-nick">Apelido (nick)</label>
+                    <input type="text" id="reg-nick" ...>
+                    <span id="msg-nick" class="msg-validacao"></span>
+                </div>
                 <button type="submit" class="btn-primario">Registrar</button>
                 <div id="erro-registro" style="display: none;"></div>
             </form>

@@ -147,6 +147,12 @@ document.addEventListener('DOMContentLoaded', function() {
         formRegistro.reset();
         erroRegistro.classList.remove('visible');
         erroRegistro.style.display = 'none';
+        
+        // Limpa as mensagens de validação ao abrir o modal novamente
+        const spanCpf = document.getElementById('msg-cpf');
+        const spanNick = document.getElementById('msg-nick');
+        if (spanCpf) spanCpf.textContent = '';
+        if (spanNick) spanNick.textContent = '';
     });
 
     btnFecharRegistro.addEventListener('click', function() {
@@ -155,6 +161,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
     modalRegistro.addEventListener('click', function(e) {
         if (e.target === modalRegistro) modalRegistro.classList.remove('active');
+    });
+
+    // ===== VALIDAÇÃO EM TEMPO REAL (BLUR) =====
+    
+    // Verificação de CPF
+    document.getElementById('reg-cpf').addEventListener('blur', async function() {
+        const cpfBruto = this.value.replace(/\D/g, '');
+        const span = document.getElementById('msg-cpf'); // vamos criar spans no HTML
+        if (!span) return;
+        if (cpfBruto.length === 11 && validarCPF(cpfBruto)) {
+            await aguardarBanco();
+            const cpfFormatado = cpfBruto.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            const existente = await db.clientes.where('cpf').equals(cpfFormatado).first();
+            span.textContent = existente ? '❌ CPF já cadastrado.' : '✅ CPF disponível.';
+            span.style.color = existente ? '#e74c3c' : '#27ae60';
+        } else {
+            span.textContent = cpfBruto.length > 0 ? '❌ CPF inválido.' : '';
+            span.style.color = '#e74c3c';
+        }
+    });
+
+    // Verificação de Nick
+    document.getElementById('reg-nick').addEventListener('blur', async function() {
+        const nick = this.value.trim();
+        const span = document.getElementById('msg-nick');
+        if (!span) return;
+        if (!nick) {
+            span.textContent = '';
+            return;
+        }
+        await aguardarBanco();
+        const todos = await db.clientes.toArray();
+        const existente = todos.find(c => c.apelido && c.apelido.toLowerCase() === nick.toLowerCase());
+        span.textContent = existente ? '❌ Apelido já está em uso.' : '✅ Apelido disponível.';
+        span.style.color = existente ? '#e74c3c' : '#27ae60';
     });
 
     // ===== REGISTRO =====
@@ -205,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const novoId = await db.clientes.add({
                 nome, apelido: nick, cpf: cpfFormatado, foto: foto || '',
-                senha, nascimento: nascimento, // <-- agora usa o valor informado
+                senha, nascimento: nascimento,
                 livros_lidos: 0, media_estrelas: 0, lendo_agora: '', bio: ''
             });
 
