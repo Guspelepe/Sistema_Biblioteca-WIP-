@@ -14,6 +14,16 @@ db.version(6).stores({
     frases: '++id, texto, autor'
 });
 
+// ===== VERSÃO 7 – adiciona campos de multa na tabela alugueis =====
+db.version(7).stores({
+    clientes: '++id, cpf, nome, apelido, foto, livros_lidos, media_estrelas, lendo_agora, bio, nascimento',
+    alugueis: '++id, cliente_id, status, livro, dias_atraso, multa', // novos campos
+    livros: '++id, titulo',
+    solicitacoes: '++id, usuario_id',
+    avaliacoes: '++id, livro, usuario_id, nota, comentario, data',
+    frases: '++id, texto, autor'
+});
+
 // ==========================================
 // 1. LISTA DE LIVROS (100 títulos)
 // ==========================================

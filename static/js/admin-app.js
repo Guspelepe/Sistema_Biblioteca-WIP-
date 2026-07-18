@@ -5,6 +5,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('👤 Admin app iniciado.');
 
+    const MULTA_POR_DIA = 1.00; // valor em reais por dia de atraso
+
     // Credenciais dos bibliotecários
     const BIBLIOTECARIOS = [
         { usuario: "ana", senha: "ana123" },
@@ -100,24 +102,69 @@ document.addEventListener('DOMContentLoaded', function() {
         alugueis.sort((a, b) => new Date(b.data_locacao) - new Date(a.data_locacao));
         const recentes = alugueis.slice(0, 20);
 
+        // Função que interpreta qualquer formato de data (ISO ou dd/mm/aaaa)
+        const parseData = (str) => {
+            if (!str) return null;
+            if (str.includes('-') && str.length === 10) {
+                const d = new Date(str + 'T00:00:00');
+                return isNaN(d) ? null : d;
+            }
+            if (str.includes('/')) {
+                const partes = str.split('/');
+                if (partes.length === 3) {
+                    const d = new Date(partes[2], partes[1] - 1, partes[0]);
+                    return isNaN(d) ? null : d;
+                }
+            }
+            return null;
+        };
+
         let html = `<div class="card"><h3>Últimas Movimentações</h3>`;
         if (recentes.length === 0) {
             html += `<p>Nenhum aluguel registrado ainda.</p>`;
         } else {
             html += `<table>
-                <thead><tr><th>Cliente</th><th>Livro</th><th>Data Locação</th><th>Status</th><th>Devolução Real</th></tr></thead><tbody>`;
-             recentes.forEach(a => {
+                <thead><tr>
+                    <th>Cliente</th><th>Livro</th><th>Data Locação</th><th>Prev. Devolução</th>
+                    <th>Devolução Real</th><th>Status</th><th>Atraso</th><th>Multa</th>
+                </tr></thead>
+                <tbody>`;
+            recentes.forEach(a => {
                 const nomeCliente = mapaClientes[a.cliente_id] || 'Desconhecido';
                 const status = a.status === 'ativo' ? 'Ativo' : 'Devolvido';
                 const statusClass = a.status === 'ativo' ? 'status-ativo' : 'status-devolvido';
                 const dataLoc = a.data_locacao.split('-').reverse().join('/');
-                const devReal = a.data_devolucao_real ? a.data_devolucao_real.split('-').reverse().join('/') : '-';
+
+                const dataPrevista = parseData(a.data_devolucao_prevista);
+                const devPrev = dataPrevista ? dataPrevista.toLocaleDateString('pt-BR') : '-';
+
+                const dataReal = parseData(a.data_devolucao_real);
+                const devReal = dataReal ? dataReal.toLocaleDateString('pt-BR') : '-';
+
+                // Calcula atraso dinamicamente se os campos não existirem no banco
+                let diasAtraso = a.dias_atraso;
+                let multa = a.multa;
+                if ((diasAtraso === undefined || diasAtraso === null) && dataPrevista && dataReal && dataReal > dataPrevista) {
+                    const diffMs = dataReal - dataPrevista;
+                    diasAtraso = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                    multa = diasAtraso * MULTA_POR_DIA;
+                } else {
+                    diasAtraso = diasAtraso || 0;
+                    multa = multa || 0;
+                }
+
+                const atrasoExibicao = diasAtraso > 0 ? `${diasAtraso} dia(s)` : '—';
+                const multaExibicao = multa > 0 ? `R$ ${multa.toFixed(2)}` : '—';
+
                 html += `<tr>
                     <td>${nomeCliente}</td>
                     <td>${a.livro}</td>
                     <td>${dataLoc}</td>
-                    <td class="${statusClass}">${status}</td>
+                    <td>${devPrev}</td>
                     <td>${devReal}</td>
+                    <td class="${statusClass}">${status}</td>
+                    <td>${atrasoExibicao}</td>
+                    <td>${multaExibicao}</td>
                 </tr>`;
             });
             html += `</tbody></table>`;
@@ -277,11 +324,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 notificar('Este aluguel não está ativo.', 'erro');
                 return;
             }
+
+            const hoje = new Date().toISOString().split('T')[0]; // yyyy-mm-dd
+            let diasAtraso = 0;
+            let multa = 0;
+
+            if (aluguel.data_devolucao_prevista) {
+                // Converte ambas as datas para Date (compatível com formato ISO)
+                const prevista = new Date(aluguel.data_devolucao_prevista + 'T00:00:00');
+                const real = new Date(hoje + 'T00:00:00');
+                if (real > prevista) {
+                    const diffMs = real - prevista;
+                    diasAtraso = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                    multa = diasAtraso * MULTA_POR_DIA;
+                }
+            }
+
+            const mensagem = diasAtraso > 0 
+                ? `Atenção: ${diasAtraso} dia(s) de atraso. Multa de R$ ${multa.toFixed(2)}. Confirmar devolução?`
+                : `Devolução dentro do prazo. Confirmar?`;
+
+            if (!confirm(mensagem)) return;
+
             await db.alugueis.update(aluguelId, {
                 status: 'devolvido',
-                data_devolucao_real: new Date().toISOString().split('T')[0]
+                data_devolucao_real: hoje,
+                dias_atraso: diasAtraso,    // vamos armazenar para histórico
+                multa: multa
             });
-            notificar(`Livro "${aluguel.livro}" devolvido com sucesso!`);
+
+            notificar(`Livro "${aluguel.livro}" devolvido com sucesso! Multa: R$ ${multa.toFixed(2)}.`);
             renderDevolver();
         });
     }
