@@ -32,22 +32,6 @@ document.addEventListener('DOMContentLoaded', function() {
         sessionStorage.removeItem('usuario');
     }
 
-    // ===== AGUARDA O BANCO =====
-    async function aguardarBanco() {
-        return new Promise((resolve) => {
-            if (typeof db !== 'undefined') {
-                resolve();
-                return;
-            }
-            const interval = setInterval(() => {
-                if (typeof db !== 'undefined') {
-                    clearInterval(interval);
-                    resolve();
-                }
-            }, 200);
-        });
-    }
-
     // ===== FUNÇÕES DE RENDERIZAÇÃO =====
     async function renderUsuarios() {
         await aguardarBanco();
@@ -348,25 +332,6 @@ document.addEventListener('DOMContentLoaded', function() {
             renderUsuarios();
         });
     }
-
-    // ===== AUXILIARES =====
-    function notificar(mensagem, tipo = 'sucesso') {
-        const notif = document.getElementById('notificacao');
-        notif.textContent = mensagem;
-        notif.className = 'notificacao ' + (tipo === 'erro' ? 'erro' : '');
-        notif.style.display = 'block';
-        setTimeout(() => { notif.style.display = 'none'; }, 4000);
-    }
-
-    window.mascararCPF = function(input) {
-        let cpf = input.value.replace(/\D/g, '');
-        if (cpf.length > 11) cpf = cpf.substring(0, 11);
-        let formatado = cpf;
-        if (cpf.length > 3) formatado = cpf.substring(0, 3) + '.' + cpf.substring(3);
-        if (cpf.length > 6) formatado = formatado.substring(0, 7) + '.' + cpf.substring(6);
-        if (cpf.length > 9) formatado = formatado.substring(0, 11) + '-' + cpf.substring(9);
-        input.value = formatado;
-    };
 
     // ===== LOGIN DO ADMIN =====
     loginForm.addEventListener('submit', function(e) {

@@ -23,22 +23,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const usuarioId = parseInt(sessionStorage.getItem('usuarioId'));
     let usuarioAtual = null;
 
-    // ===== AGUARDA O BANCO =====
-    async function aguardarBanco() {
-        return new Promise((resolve) => {
-            if (typeof db !== 'undefined') {
-                resolve();
-                return;
-            }
-            const interval = setInterval(() => {
-                if (typeof db !== 'undefined') {
-                    clearInterval(interval);
-                    resolve();
-                }
-            }, 200);
-        });
-    }
-
     // ===== CARREGA USUÁRIO =====
     async function carregarUsuario() {
         try {
@@ -187,9 +171,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 const status = aluguel.status === 'ativo' ? 'Ativo' : 'Devolvido';
                 const statusClass = aluguel.status === 'ativo' ? 'status-disponivel' : 'status-alugado';
                 const dataLoc = aluguel.data_locacao.split('-').reverse().join('/');
-                const devPrev = aluguel.data_devolucao_prevista 
-                    ? new Date(aluguel.data_devolucao_prevista + 'T00:00:00').toLocaleDateString('pt-BR') 
-                    : '-';
+                let devPrev = '-';
+                if (aluguel.data_devolucao_prevista) {
+                    let dataObj;
+                    const strData = aluguel.data_devolucao_prevista;
+                    if (strData.includes('/')) {
+                        // formato antigo dd/mm/aaaa
+                        const partes = strData.split('/');
+                        if (partes.length === 3) {
+                            dataObj = new Date(partes[2], partes[1] - 1, partes[0]);
+                        }
+                    } else if (strData.includes('-')) {
+                        // formato ISO yyyy-mm-dd
+                        dataObj = new Date(strData + 'T00:00:00');
+                    }
+                    if (dataObj && !isNaN(dataObj)) {
+                        devPrev = dataObj.toLocaleDateString('pt-BR');
+                    }
+                }
                 const devReal = aluguel.data_devolucao_real ? aluguel.data_devolucao_real.split('-').reverse().join('/') : '-';
 
                 let acoes = '';
@@ -341,12 +340,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 html += `<div style="display:grid; gap:16px;">`;
                 avaliacoes.forEach(av => {
                     const usuario = mapaClientes[av.usuario_id] || { nome: 'Anônimo', apelido: 'Anônimo', foto: '' };
-                    const fotoUrl = usuario.foto || 'static/src/default-avatar.png';
+                    const fotoUrl = usuario.foto || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiNCM0U1RkMiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjgyIiByPSIyOCIgZmlsbD0id2hpdGUiIHN0cm9rZT0iI0IwQkVDNSIgc3Ryb2tlLXdpZHRoPSIxLjUiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjQwIiByPSIxNiIgZmlsbD0id2hpdGUiIHN0cm9rZT0iI0IwQkVDNSIgc3Ryb2tlLXdpZHRoPSIxLjUiLz48cmVjdCB4PSIzOCIgeT0iMjIiIHdpZHRoPSIyNCIgaGVpZ2h0PSIxOCIgcng9IjIiIGZpbGw9IiMzNzQ3NEYiLz48cmVjdCB4PSIzMiIgeT0iMzciIHdpZHRoPSIzNiIgaGVpZ2h0PSI0IiByeD0iMiIgZmlsbD0iIzM3NDc0RiIvPjxjaXJjbGUgY3g9IjQ1IiBjeT0iMzgiIHI9IjIiIGZpbGw9IiMyMTIxMjEiLz48Y2lyY2xlIGN4PSI1NSIgY3k9IjM4IiByPSIyIiBmaWxsPSIjMjEyMTIxIi8+PHBvbHlnb24gcG9pbnRzPSI1MCw0MiA1Niw0NCA1MCw0NiIgZmlsbD0iI0ZGNzA0MyIvPjxjaXJjbGUgY3g9IjQ1IiBjeT0iNDciIHI9IjEuMiIgZmlsbD0iIzQyNDI0MiIvPjxjaXJjbGUgY3g9IjQ4LjUiIGN5PSI0OC41IiByPSIxLjIiIGZpbGw9IiM0MjQyNDIiLz48Y2lyY2xlIGN4PSI1MS41IiBjeT0iNDguNSIgcj0iMS4yIiBmaWxsPSIjNDI0MjQyIi8+PGNpcmNsZSBjeD0iNTUiIGN5PSI0NyIgcj0iMS4yIiBmaWxsPSIjNDI0MjQyIi8+PHBhdGggZD0iTTM5IDUyIFE1MCA1NyA2MSA1MiBMNjAgNTggUTUwIDYzIDQwIDU4IFoiIGZpbGw9IiNFNTM5MzUiLz48cmVjdCB4PSI1OCIgeT0iNTUiIHdpZHRoPSI4IiBoZWlnaHQ9IjE0IiByeD0iMiIgZmlsbD0iI0U1MzkzNSIgdHJhbnNmb3JtPSJyb3RhdGUoMTUgNTggNTUpIi8+PGNpcmNsZSBjeD0iNTAiIGN5PSI2NSIgcj0iMi41IiBmaWxsPSIjNDI0MjQyIi8+PGNpcmNsZSBjeD0iNTAiIGN5PSI3MyIgcj0iMi41IiBmaWxsPSIjNDI0MjQyIi8+PGNpcmNsZSBjeD0iNTAiIGN5PSI4MSIgcj0iMi41IiBmaWxsPSIjNDI0MjQyIi8+PGxpbmUgeDE9IjM1IiB5MT0iNTgiIHgyPSIyMCIgeTI9IjQ4IiBzdHJva2U9IiM3OTU1NDgiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iMjEiIHkxPSI0OSIgeDI9IjE3IiB5Mj0iNDMiIHN0cm9rZT0iIzc5NTU0OCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iNjUiIHkxPSI1OCIgeDI9IjgwIiB5Mj0iNDgiIHN0cm9rZT0iIzc5NTU0OCIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxsaW5lIHgxPSI3OSIgeTE9IjQ5IiB4Mj0iODMiIHkyPSI0MyIgc3Ryb2tlPSIjNzk1NTQ4IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjEuNSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuOCIvPjxjaXJjbGUgY3g9IjgwIiBjeT0iMTUiIHI9IjEuNSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuOCIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iNzUiIHI9IjEiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjgiLz48Y2lyY2xlIGN4PSI4NSIgY3k9IjgwIiByPSIxIiBmaWxsPSJ3aGl0ZSIgb3BjaXR5PSIwLjgiLz48L3N2Zz4=';
                     const nomeExibicao = usuario.apelido || usuario.nome;
                     html += `
                         <div style="background: var(--bg-sidebar); padding: 16px; border-radius: 8px; border-left: 4px solid var(--accent-color); display: flex; align-items: center; gap: 16px;">
                             <div style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 2px solid var(--accent-color);">
-                                <img src="${fotoUrl}" alt="${nomeExibicao}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='static/src/default-avatar.png'">
+                                <img src="${fotoUrl}" alt="${nomeExibicao}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiNlZWUiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjQwIiByPSIxNSIgZmlsbD0iI2NjYyIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iODUiIHI9IjMwIiBmaaWxsPSIjY2NjIi8+PC9zdmc+'">
                             </div>
                             <div style="flex:1;">
                                 <p><strong>${av.livro}</strong> - ⭐ ${av.nota}/5</p>
@@ -423,12 +422,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 notificar('Este aluguel não está ativo.', 'erro');
                 return;
             }
-            const partes = aluguel.data_devolucao_prevista.split('/');
-            const data = new Date(aluguel.data_devolucao_prevista + 'T00:00:00');
+            
+            let data;
+            const strData = aluguel.data_devolucao_prevista;
+            if (strData.includes('/')) {
+                const partes = strData.split('/');
+                if (partes.length === 3) {
+                    data = new Date(partes[2], partes[1] - 1, partes[0]);
+                } else {
+                    notificar('Formato de data inválido.', 'erro');
+                    return;
+                }
+            } else if (strData.includes('-')) {
+                data = new Date(strData + 'T00:00:00');
+            } else {
+                notificar('Formato de data inválido.', 'erro');
+                return;
+            }
+            
+            if (isNaN(data)) {
+                notificar('Erro ao processar data.', 'erro');
+                return;
+            }
+            
             data.setDate(data.getDate() + 7);
             const novaDataISO = data.toISOString().split('T')[0];
             await db.alugueis.update(aluguelId, { data_devolucao_prevista: novaDataISO });
-            // Notificar com formato pt-BR
             const novaDataBR = data.toLocaleDateString('pt-BR');
             notificar(`Aluguel renovado até ${novaDataBR}.`);
             renderMeusLivros();
@@ -458,15 +477,6 @@ document.addEventListener('DOMContentLoaded', function() {
             notificar('Erro ao devolver livro.', 'erro');
         }
     };
-
-    // ===== NOTIFICAÇÃO =====
-    function notificar(mensagem, tipo = 'sucesso') {
-        const notif = document.getElementById('notificacao-user');
-        notif.textContent = mensagem;
-        notif.className = 'notificacao-user ' + (tipo === 'erro' ? 'erro' : '');
-        notif.style.display = 'block';
-        setTimeout(() => { notif.style.display = 'none'; }, 4000);
-    }
 
     // ===== LOGOUT =====
     function logout() {

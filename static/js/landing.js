@@ -16,22 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
         imgElement.alt = 'Imagem de leitor';
     }
 
-    // ===== AGUARDA BANCO (definida antes de usar) =====
-    async function aguardarBanco() {
-        return new Promise((resolve) => {
-            if (typeof db !== 'undefined') {
-                resolve();
-                return;
-            }
-            const interval = setInterval(() => {
-                if (typeof db !== 'undefined') {
-                    clearInterval(interval);
-                    resolve();
-                }
-            }, 200);
-        });
-    }
-
     // ===== EXIBE FRASE DO BANCO =====
     async function exibirFrase() {
         const container = document.getElementById('frase-destaque');
@@ -173,17 +157,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target === modalRegistro) modalRegistro.classList.remove('active');
     });
 
-    // ===== MÁSCARA CPF =====
-    window.mascararCPF = function(input) {
-        let cpf = input.value.replace(/\D/g, '');
-        if (cpf.length > 11) cpf = cpf.substring(0, 11);
-        let formatado = cpf;
-        if (cpf.length > 3) formatado = cpf.substring(0, 3) + '.' + cpf.substring(3);
-        if (cpf.length > 6) formatado = formatado.substring(0, 7) + '.' + cpf.substring(6);
-        if (cpf.length > 9) formatado = formatado.substring(0, 11) + '-' + cpf.substring(9);
-        input.value = formatado;
-    };
-
     // ===== REGISTRO =====
     formRegistro.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -242,19 +215,6 @@ document.addEventListener('DOMContentLoaded', function() {
             erroRegistro.style.display = 'block';
         }
     });
-
-    // ===== MOSTRAR SENHA =====
-    window.toggleSenha = function(inputId, botao) {
-        const input = document.getElementById(inputId);
-        if (!input) return;
-        if (input.type === 'password') {
-            input.type = 'text';
-            botao.textContent = '🙈';
-        } else {
-            input.type = 'password';
-            botao.textContent = '👁️';
-        }
-    };
 
     console.log('✅ Landing page carregada.');
 });
