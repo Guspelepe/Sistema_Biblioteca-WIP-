@@ -316,6 +316,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const nascimento = document.getElementById('nascimento').value;
             const senha = document.getElementById('senha-cliente').value;
 
+            // Valida CPF
+            if (!validarCPF(cpfBruto)) {
+                notificar('CPF inválido. Verifique os dígitos.', 'erro');
+                return;
+            }
+
             if (!nome || cpfBruto.length !== 11 || !nascimento || !senha) {
                 notificar('Preencha todos os campos corretamente.', 'erro');
                 return;

@@ -55,3 +55,37 @@ function toggleSenha(inputId, botao) {
         botao.textContent = '👁️';
     }
 }
+
+/**
+ * Valida um CPF verificando os dígitos verificadores.
+ * @param {string} cpf - CPF com ou sem pontuação (ex.: "529.982.247-25")
+ * @returns {boolean} true se for um CPF válido.
+ */
+function validarCPF(cpf) {
+    cpf = cpf.replace(/\D/g, ''); // remove tudo que não é número
+
+    if (cpf.length !== 11) return false;
+
+    // Rejeita sequências de dígitos iguais (ex.: 111.111.111-11)
+    if (/^(\d)\1{10}$/.test(cpf)) return false;
+
+    // Cálculo do primeiro dígito verificador
+    let soma = 0;
+    for (let i = 0; i < 9; i++) {
+        soma += parseInt(cpf.charAt(i)) * (10 - i);
+    }
+    let resto = soma % 11;
+    let digito1 = resto < 2 ? 0 : 11 - resto;
+    if (digito1 !== parseInt(cpf.charAt(9))) return false;
+
+    // Cálculo do segundo dígito verificador
+    soma = 0;
+    for (let i = 0; i < 10; i++) {
+        soma += parseInt(cpf.charAt(i)) * (11 - i);
+    }
+    resto = soma % 11;
+    let digito2 = resto < 2 ? 0 : 11 - resto;
+    if (digito2 !== parseInt(cpf.charAt(10))) return false;
+
+    return true;
+}

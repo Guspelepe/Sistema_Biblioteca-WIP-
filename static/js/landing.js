@@ -168,9 +168,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const cpfBruto = document.getElementById('reg-cpf').value.replace(/\D/g, '');
         const senha = document.getElementById('reg-senha').value.trim();
         const foto = document.getElementById('reg-foto').value.trim() || '';
+        const nascimento = document.getElementById('reg-nascimento').value;
 
-        if (!nome || !nick || cpfBruto.length !== 11 || !senha || senha.length < 4) {
+        if (!nome || !nick || cpfBruto.length !== 11 || !nascimento || !senha || senha.length < 4) {
             erroRegistro.textContent = 'Preencha todos os campos corretamente (senha mínimo 4 caracteres).';
+            erroRegistro.classList.add('visible');
+            erroRegistro.style.display = 'block';
+            return;
+        }
+
+        // Valida o CPF (dígitos verificadores)
+        if (!validarCPF(cpfBruto)) {
+            erroRegistro.textContent = 'CPF inválido. Verifique os dígitos.';
             erroRegistro.classList.add('visible');
             erroRegistro.style.display = 'block';
             return;
@@ -196,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const novoId = await db.clientes.add({
                 nome, apelido: nick, cpf: cpfFormatado, foto: foto || '',
-                senha, nascimento: '2000-01-01',
+                senha, nascimento: nascimento, // <-- agora usa o valor informado
                 livros_lidos: 0, media_estrelas: 0, lendo_agora: '', bio: ''
             });
 
