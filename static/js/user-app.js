@@ -563,6 +563,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         ${s.autor ? `<p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px;">Autor: ${s.autor}</p>` : ''}
                         ${s.comentario ? `<p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">"${s.comentario}"</p>` : ''}
+                        ${s.resposta ? `
+                            <div style="background: rgba(39, 174, 96, 0.1); padding: 8px 12px; border-radius: 4px; margin-top: 8px; border-left: 3px solid #27ae60;">
+                                <strong style="color: #27ae60;">📬 Resposta da biblioteca:</strong>
+                                <p style="margin: 4px 0 0; color: var(--text-secondary); font-size: 0.85rem;">${s.resposta}</p>
+                            </div>
+                        ` : ''}
                         <small style="color: var(--text-secondary); font-size: 0.75rem;">Enviado em ${new Date(s.data).toLocaleDateString('pt-BR')}</small>
                     </div>
                 `;

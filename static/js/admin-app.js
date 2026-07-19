@@ -606,7 +606,7 @@ document.addEventListener('DOMContentLoaded', function() {
         contentArea.innerHTML = html;
     }
 
-    // Função global para exibir detalhes da solicitação
+    // Função global para exibir detalhes da solicitação (COM RESPOSTA)
     window.verDetalhesSolicitacao = async function(id) {
         const solicitacao = await db.solicitacoes.get(id);
         if (!solicitacao) return;
@@ -618,7 +618,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = new Date(solicitacao.data).toLocaleDateString('pt-BR');
         const status = solicitacao.status === 'atendido' ? '✅ Atendido' : '⏳ Pendente';
 
-        // Cria modal
+        // Remove modal anterior se existir
         const existente = document.getElementById('modal-detalhes-solicitacao');
         if (existente) existente.remove();
 
@@ -649,8 +649,21 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p style="margin:8px 0 0; color:#555; font-style:italic;">"${solicitacao.comentario}"</p>
                     </div>
                 ` : ''}
+                <!-- NOVO: Resposta do admin (se já existir) -->
+                ${solicitacao.resposta ? `
+                    <div style="background:#e8f5e9; padding:12px; border-radius:6px; margin-bottom:16px; border-left:4px solid #27ae60;">
+                        <strong>📬 Resposta da biblioteca:</strong>
+                        <p style="margin:8px 0 0; color:#2e7d32;">${solicitacao.resposta}</p>
+                    </div>
+                ` : ''}
+                <!-- NOVO: Campo para enviar resposta (sempre visível) -->
+                <div style="margin-top:12px;">
+                    <label for="resposta-admin" style="display:block; margin-bottom:4px; font-weight:600;">Responder ao usuário:</label>
+                    <textarea id="resposta-admin" rows="3" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;" placeholder="Escreva uma resposta...">${solicitacao.resposta || ''}</textarea>
+                    <button onclick="enviarResposta(${solicitacao.id})" style="margin-top:8px; background:#2196F3; color:#fff; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">✉️ Enviar Resposta</button>
+                </div>
                 ${solicitacao.status === 'pendente' ? `
-                    <button onclick="atenderSolicitacao(${solicitacao.id}); document.getElementById('modal-detalhes-solicitacao').remove();" style="background:#27ae60; color:#fff; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">✅ Atender Solicitação</button>
+                    <button onclick="atenderSolicitacao(${solicitacao.id}); document.getElementById('modal-detalhes-solicitacao').remove();" style="background:#27ae60; color:#fff; border:none; padding:8px 16px; border-radius:4px; cursor:pointer; margin-top:12px;">✅ Atender Solicitação</button>
                 ` : ''}
             </div>
         `;
@@ -667,6 +680,19 @@ document.addEventListener('DOMContentLoaded', function() {
         await db.solicitacoes.update(id, { status: 'atendido' });
         notificar('Solicitação marcada como atendida.');
         renderSolicitacoes(); // recarrega a lista
+    };
+
+    // ===== NOVA FUNÇÃO GLOBAL PARA ENVIAR RESPOSTA =====
+    window.enviarResposta = async function(id) {
+        const resposta = document.getElementById('resposta-admin').value.trim();
+        if (!resposta) {
+            notificar('Escreva uma resposta antes de enviar.', 'erro');
+            return;
+        }
+        await db.solicitacoes.update(id, { resposta: resposta });
+        notificar('Resposta enviada com sucesso!');
+        document.getElementById('modal-detalhes-solicitacao').remove();
+        renderSolicitacoes();
     };
 
     // ===== LOGOUT  =====
