@@ -341,3 +341,13 @@ function logout() {
     sessionStorage.clear();
     window.location.href = 'index.html';
 }
+
+/**
+ * Valida se uma URL tem extensão de imagem conhecida.
+ * Retorna true se for válida, false caso contrário.
+ */
+function validarURLImagem(url) {
+    if (!url || url.trim() === '') return false; // campo vazio é permitido (placeholder será usado)
+    const extensoes = /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i;
+    return extensoes.test(url.trim());
+}

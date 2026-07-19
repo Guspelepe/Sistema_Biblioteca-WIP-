@@ -21,15 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------------
     // ELEMENTOS DOM PRINCIPAIS
     // ----------------------------------------------------------
-    const contentUser     = document.getElementById('content-user');
-    const sectionTitle    = document.getElementById('section-title-user');
-    const userNome        = document.getElementById('user-nome');
-    const userApelido     = document.getElementById('user-apelido');
-    const userAvatar      = document.getElementById('user-avatar');
-    const logoutBtn       = document.getElementById('logout-user');
+    const contentUser  = document.getElementById('content-user');
+    const sectionTitle = document.getElementById('section-title-user');
+    const userNome     = document.getElementById('user-nome');
+    const userApelido  = document.getElementById('user-apelido');
+    const userAvatar   = document.getElementById('user-avatar');
+    const logoutBtn    = document.getElementById('logout-user');
 
-    const usuarioId       = parseInt(sessionStorage.getItem('usuarioId'));
-    let usuarioAtual      = null;
+    const usuarioId    = parseInt(sessionStorage.getItem('usuarioId'));
+    let usuarioAtual   = null;
 
     // ----------------------------------------------------------
     // CARREGAMENTO INICIAL DO USUÁRIO
@@ -459,17 +459,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             document.getElementById('btn-salvar-perfil').addEventListener('click', async (e) => {
                 e.preventDefault();
-                const fotoVal      = document.getElementById('edit-foto').value.trim();
-                const bioVal       = document.getElementById('edit-bio').value.trim();
-                const lendoVal     = document.getElementById('edit-lendo').value.trim();
-                const nascVal      = document.getElementById('edit-nascimento').value;
-                const senhaVal     = document.getElementById('edit-senha').value.trim();
+                const fotoVal  = document.getElementById('edit-foto').value.trim();
+                const bioVal   = document.getElementById('edit-bio').value.trim();
+                const lendoVal = document.getElementById('edit-lendo').value.trim();
+                const nascVal  = document.getElementById('edit-nascimento').value;
+                const senhaVal = document.getElementById('edit-senha').value.trim();
+
+                // Validação da URL da foto
+                if (fotoVal && !validarURLImagem(fotoVal)) {
+                    notificar('URL da foto inválida. Use um link com extensão .jpg, .png, .gif ou .webp.', 'erro');
+                    return;
+                }
 
                 const atualizacao = {};
-                if (fotoVal) atualizacao.foto = fotoVal;
-                if (bioVal) atualizacao.bio = bioVal;
+                if (fotoVal)  atualizacao.foto        = fotoVal;
+                if (bioVal)   atualizacao.bio         = bioVal;
                 if (lendoVal) atualizacao.lendo_agora = lendoVal;
-                if (nascVal) atualizacao.nascimento = nascVal;
+                if (nascVal)  atualizacao.nascimento  = nascVal;
                 if (senhaVal && senhaVal.length >= 4) atualizacao.senha = senhaVal;
 
                 if (Object.keys(atualizacao).length === 0) {

@@ -306,7 +306,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const nick = document.getElementById('reg-nick').value.trim();
         const cpfBruto = document.getElementById('reg-cpf').value.replace(/\D/g, '');
         const senha = document.getElementById('reg-senha').value.trim();
-        const foto = document.getElementById('reg-foto').value.trim() || '';
+        const foto = document.getElementById('reg-foto').value.trim();
+
+        // Valida URL da foto
+        if (foto && !validarURLImagem(foto)) {
+            erroRegistro.textContent = 'URL da foto inválida. Use um link com extensão .jpg, .png, .gif ou .webp.';
+            erroRegistro.classList.add('visible');
+            erroRegistro.style.display = 'block';
+            return;
+        }
+        
         const nascimento = document.getElementById('reg-nascimento').value;
 
         if (!nome || !nick || cpfBruto.length !== 11 || !nascimento || !senha || senha.length < 4) {
