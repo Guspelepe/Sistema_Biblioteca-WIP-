@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // RENDERIZAÇÕES
     // ================================================================
 
-    // 1. USUÁRIOS
+    // 1. USUÁRIOS (com gerenciamento: novo, excluir, resetar senha)
     async function renderUsuarios() {
         await aguardarBanco();
         const clientes = await db.clientes.toArray();
@@ -45,12 +45,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const mapaAluguel = {};
         alugueisAtivos.forEach(a => { mapaAluguel[a.cliente_id] = a.livro; });
 
-        let html = `<div class="card"><h3>Usuários Cadastrados</h3>`;
+        let html = `<div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="margin:0; border-bottom:none; padding-bottom:0;">Usuários Cadastrados</h3>
+                <button id="btn-novo-usuario" class="tema-botao-sidebar" style="width:auto; padding:8px 16px; background:var(--btn-primary); color:#fff; border:none; border-radius:4px; cursor:pointer;">➕ Novo Usuário</button>
+            </div>`;
+
         if (clientes.length === 0) {
             html += `<p>Nenhum usuário cadastrado.</p>`;
         } else {
             html += `<table>
-                <thead><tr><th>Foto</th><th>Nome</th><th>Apelido</th><th>CPF</th><th>Livros Lidos</th><th>Média</th><th>Lendo Agora</th><th>Livro Alugado</th></tr></thead><tbody>`;
+                <thead><tr><th>Foto</th><th>Nome</th><th>Apelido</th><th>CPF</th><th>Livros Lidos</th><th>Média</th><th>Lendo Agora</th><th>Livro Alugado</th><th>Ações</th></tr></thead><tbody>`;
             clientes.forEach(c => {
                 const livro = mapaAluguel[c.id] || '—';
                 const fotoHtml = c.foto ? `<img src="${c.foto}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">` : '—';
@@ -67,12 +72,148 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>${media}</td>
                     <td>${lendo}</td>
                     <td>${livro !== '—' ? `<span class="status-ativo">${livro}</span>` : '—'}</td>
+                    <td>
+                        <button onclick="resetarSenha(${c.id}, '${c.nome.replace(/'/g, "\\'")}')" style="background:#f39c12; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem;">🔑 Senha</button>
+                        <button onclick="excluirUsuario(${c.id}, '${c.nome.replace(/'/g, "\\'")}')" style="background:#e74c3c; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem; margin-left:4px;">🗑️ Excluir</button>
+                    </td>
                 </tr>`;
             });
             html += `</tbody></table>`;
         }
         html += `</div>`;
         contentArea.innerHTML = html;
+
+        // Evento do botão "Novo Usuário"
+        document.getElementById('btn-novo-usuario').addEventListener('click', renderCadastroUsuario);
+    }
+
+    // Funções globais para ações da tabela de usuários
+    window.resetarSenha = async function(id, nome) {
+        if (!confirm(`Resetar senha de "${nome}" para "123456"?`)) return;
+        await db.clientes.update(id, { senha: '123456' });
+        notificar(`Senha de "${nome}" resetada para 123456.`);
+    };
+
+    window.excluirUsuario = async function(id, nome) {
+        if (!confirm(`Tem certeza que deseja excluir "${nome}"? Esta ação é irreversível.`)) return;
+        
+        // Verifica se o usuário tem aluguel ativo
+        const aluguelAtivo = await db.alugueis.where({ cliente_id: id, status: 'ativo' }).first();
+        if (aluguelAtivo) {
+            notificar('Este usuário possui um livro alugado. Devolva o livro antes de excluir.', 'erro');
+            return;
+        }
+        
+        await db.clientes.delete(id);
+        // Remove avaliações do usuário
+        await db.avaliacoes.where('usuario_id').equals(id).delete();
+        notificar(`Usuário "${nome}" excluído com sucesso.`);
+        renderUsuarios();
+    };
+
+    // Função de cadastro de novo usuário (formulário inline)
+    async function renderCadastroUsuario() {
+        await aguardarBanco();
+        let html = `<div class="card"><h3>➕ Cadastrar Novo Usuário</h3>
+            <form id="form-cadastro-usuario">
+                <div>
+                    <label for="nome">Nome Completo</label>
+                    <input type="text" id="nome" required>
+                </div>
+                <div>
+                    <label for="apelido">Apelido (nick)</label>
+                    <input type="text" id="apelido" placeholder="Como será chamado" required>
+                    <span id="msg-apelido-admin" class="msg-validacao"></span>
+                </div>
+                <div>
+                    <label for="cpf">CPF</label>
+                    <input type="text" id="cpf" placeholder="000.000.000-00" required maxlength="14">
+                    <span id="msg-cpf-admin" class="msg-validacao"></span>
+                </div>
+                <div>
+                    <label for="nascimento">Data de Nascimento</label>
+                    <input type="date" id="nascimento" required>
+                </div>
+                <div>
+                    <label for="senha-cliente">Senha</label>
+                    <input type="password" id="senha-cliente" placeholder="Mínimo 4 caracteres" required>
+                </div>
+                <div class="full-width">
+                    <button type="submit">Cadastrar</button>
+                    <button type="button" id="btn-voltar-usuarios" class="secundario" style="margin-left:8px;">Voltar</button>
+                </div>
+            </form>
+        </div>`;
+        contentArea.innerHTML = html;
+
+        // Máscara de CPF
+        document.getElementById('cpf').addEventListener('input', function() {
+            mascararCPF(this);
+        });
+
+        // Validação em tempo real de CPF
+        document.getElementById('cpf').addEventListener('blur', async function() {
+            const cpfBruto = this.value.replace(/\D/g, '');
+            const span = document.getElementById('msg-cpf-admin');
+            if (!span) return;
+            if (cpfBruto.length === 11 && validarCPF(cpfBruto)) {
+                await aguardarBanco();
+                const cpfFormatado = cpfBruto.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                const existente = await db.clientes.where('cpf').equals(cpfFormatado).first();
+                span.textContent = existente ? '❌ CPF já cadastrado.' : '✅ CPF disponível.';
+                span.style.color = existente ? '#e74c3c' : '#27ae60';
+            } else {
+                span.textContent = cpfBruto.length > 0 ? '❌ CPF inválido.' : '';
+                span.style.color = '#e74c3c';
+            }
+        });
+
+        // Validação em tempo real de apelido
+        document.getElementById('apelido').addEventListener('blur', async function() {
+            const apelido = this.value.trim();
+            const span = document.getElementById('msg-apelido-admin');
+            if (!span || !apelido) { if (span) span.textContent = ''; return; }
+            await aguardarBanco();
+            const existente = await db.clientes.where('apelido').equalsIgnoreCase(apelido).first();
+            span.textContent = existente ? '❌ Apelido já está em uso.' : '✅ Apelido disponível.';
+            span.style.color = existente ? '#e74c3c' : '#27ae60';
+        });
+
+        // Submit
+        document.getElementById('form-cadastro-usuario').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nome = document.getElementById('nome').value.trim();
+            const apelido = document.getElementById('apelido').value.trim();
+            const cpfBruto = document.getElementById('cpf').value.replace(/\D/g, '');
+            const nascimento = document.getElementById('nascimento').value;
+            const senha = document.getElementById('senha-cliente').value;
+
+            if (!validarCPF(cpfBruto)) {
+                notificar('CPF inválido.', 'erro');
+                return;
+            }
+            if (!nome || !apelido || cpfBruto.length !== 11 || !nascimento || !senha) {
+                notificar('Preencha todos os campos.', 'erro');
+                return;
+            }
+
+            const cpfFormatado = cpfBruto.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            const cpfExistente = await db.clientes.where('cpf').equals(cpfFormatado).first();
+            if (cpfExistente) { notificar('CPF já cadastrado.', 'erro'); return; }
+            
+            const apelidoExistente = await db.clientes.where('apelido').equalsIgnoreCase(apelido).first();
+            if (apelidoExistente) { notificar('Apelido já em uso.', 'erro'); return; }
+
+            await db.clientes.add({
+                nome, apelido, cpf: cpfFormatado, nascimento, senha,
+                livros_lidos: 0, media_estrelas: 0, lendo_agora: '', bio: '', foto: ''
+            });
+            notificar(`Usuário "${nome}" cadastrado com sucesso!`);
+            renderUsuarios();
+        });
+
+        // Botão Voltar
+        document.getElementById('btn-voltar-usuarios').addEventListener('click', renderUsuarios);
     }
 
     // 2. RELATÓRIO
@@ -158,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
         contentArea.innerHTML = html;
     }
 
-    // 4. ADICIONAR LIVROS (NOVO)
+    // 4. ADICIONAR LIVROS
     async function renderAdicionarLivros() {
         await aguardarBanco();
         let html = `
@@ -195,7 +336,6 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         contentArea.innerHTML = html;
 
-        // Carrega os últimos 5 livros adicionados (mais recentes pelo ID)
         async function carregarUltimosLivros() {
             const livros = await db.livros.toArray();
             const ultimos = livros.sort((a, b) => b.id - a.id).slice(0, 5);
@@ -214,7 +354,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         carregarUltimosLivros();
 
-        // Evento de submit
         document.getElementById('form-adicionar-livro').addEventListener('submit', async (e) => {
             e.preventDefault();
             const titulo = document.getElementById('novo-titulo').value.trim();
@@ -427,6 +566,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ===== LOGOUT  =====
+    logoutBtn.addEventListener('click', logout);
+
     // ===== LOGIN DO ADMIN =====
     loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -443,14 +585,12 @@ document.addEventListener('DOMContentLoaded', function() {
             adminNomeSpan.textContent = user;
             loginError.style.display = 'none';
             document.getElementById('login-form').reset();
-            document.querySelector('a[data-section="usuarios"]')?.click();
+            const defaultLink = document.querySelector('a[data-section="usuarios"]');
+            if (defaultLink) defaultLink.click();
         } else {
             loginError.style.display = 'block';
         }
     });
-
-    // ===== LOGOUT =====
-    logoutBtn.addEventListener('click', logout);
 
     // ===== TEMA =====
     const temaBtn = document.getElementById('tema-btn');
@@ -469,12 +609,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ================================================================
-    // NAVEGAÇÃO (ATUALIZADA)
+    // NAVEGAÇÃO
     // ================================================================
     const menuLinks = document.querySelectorAll('.sidebar-nav a[data-section]');
     menuLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
+            
+            if (sessionStorage.getItem('logado') !== 'true') {
+                notificar('Você precisa estar logado para acessar.', 'erro');
+                return;
+            }
+
             const section = this.getAttribute('data-section');
             const titles = {
                 'usuarios': 'Usuários',
@@ -507,7 +653,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (sessionStorage.getItem('logado') === 'true' && sessionStorage.getItem('perfil') === 'bibliotecario') {
         loginModal.style.display = 'none';
         adminNomeSpan.textContent = sessionStorage.getItem('usuario');
-        document.querySelector('a[data-section="usuarios"]')?.click();
+        const defaultLink = document.querySelector('a[data-section="usuarios"]');
+        if (defaultLink) defaultLink.click();
     } else {
         loginModal.style.display = 'flex';
         contentArea.innerHTML = '<p>Faça login para acessar o sistema.</p>';
