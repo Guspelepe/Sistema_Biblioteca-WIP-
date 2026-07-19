@@ -19,10 +19,11 @@
                 <p id="frase-destaque"></p>
             </div>
         </div>
+
         <!-- Coluna do formulário (direita) -->
         <div class="col-form">
             <div class="card">
-                <h1><span>Biblioteca</span></h1>
+                <h1><span>Login</span></h1>
                 <p class="subtitulo">Digite suas credenciais para acessar</p>
 
                 <form id="login-form">
@@ -47,11 +48,31 @@
         </div>
     </div>
 
+    <!-- ===== FOOTER ===== -->
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-dev">
+                <span>Desenvolvido por</span>
+                <span class="dev-name">Gustavo Duanny Pelepe</span>
+                <span class="separator">•</span>
+                <span class="dev-name">Ronaldo Henrique Karas</span>
+                <span class="separator">•</span>
+                <span class="dev-name">Douglas Becker</span>
+            </div>
+            <div class="footer-github">
+                <a href="https://github.com/ronaldokaras/sistema-biblioteca-grupo" target="_blank">
+                    <span class="github-icon"></span> GitHub
+                </a>
+                <span class="footer-year">© 2026</span>
+            </div>
+        </div>
+    </footer>
+
     <!-- ===== MODAL DE REGISTRO ===== -->
     <div class="modal-overlay" id="modal-registro">
         <div class="modal-content">
             <button class="fechar" id="btn-fechar-registro">&times;</button>
-            <h2>📝 <span>Criar conta</span></h2>
+            <h2><span>Criar conta</span></h2>
             <p class="subtitulo-modal">Preencha os dados para se cadastrar</p>
 
             <form id="form-registro">
@@ -94,6 +115,5 @@
     <script src="static/js/utils.js"></script>
     <script src="static/js/db.js"></script>
     <script src="static/js/landing.js"></script>
-    
 </body>
 </html>

@@ -400,3 +400,346 @@ body {
         font-size: 1.4rem;
     }
 }
+
+/* ===== PERFIL ===== */
+.perfil-card .perfil-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.perfil-avatar-grande {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid var(--accent-color);
+    flex-shrink: 0;
+}
+
+.perfil-avatar-grande img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.perfil-nomes {
+    flex: 1;
+}
+
+.perfil-apelido {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.perfil-nome-completo {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin: 4px 0 0;
+}
+
+.perfil-info {
+    margin-top: 16px;
+}
+
+.perfil-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 20px;
+    max-width: 100%;
+}
+
+.perfil-form .full-width {
+    grid-column: 1 / -1;
+}
+
+.perfil-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.perfil-campo label {
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.perfil-campo input,
+.perfil-campo textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    transition: border 0.2s;
+    font-family: inherit;
+}
+
+.perfil-campo input:focus,
+.perfil-campo textarea:focus {
+    border-color: var(--accent-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+}
+
+.perfil-review-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 20px;
+    max-width: 100%;
+    margin-top: 16px;
+}
+
+.perfil-review-form .full-width {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+    .perfil-form,
+    .perfil-review-form {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== PERFIL – EDITAR ===== */
+.perfil-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.perfil-campo label {
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.perfil-campo input,
+.perfil-campo textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    transition: border 0.2s;
+    font-family: inherit;
+}
+
+.perfil-campo input:focus,
+.perfil-campo textarea:focus {
+    border-color: var(--accent-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+}
+
+.perfil-campo small {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+/* ========================================
+   FOOTER
+   ======================================== */
+.site-footer {
+    background: linear-gradient(135deg, #0d0d0d, #1a1a2e);
+    border-top: 2px solid var(--accent-color, #e94560);
+    padding: 20px 30px;
+    margin-top: 30px;
+    border-radius: 12px 12px 0 0;
+    flex-shrink: 0;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.footer-dev {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.footer-dev span {
+    color: var(--text-secondary, #b0b0b0);
+    font-size: 0.9rem;
+}
+
+.footer-dev .dev-name {
+    color: var(--text-primary, #fff);
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.footer-dev .dev-name:hover {
+    color: var(--accent-color, #e94560);
+}
+
+.footer-dev .separator {
+    color: var(--text-secondary, #b0b0b0);
+    opacity: 0.4;
+}
+
+.footer-github {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.footer-github a {
+    color: var(--text-secondary, #b0b0b0);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.footer-github a:hover {
+    color: var(--accent-color, #e94560);
+    transform: translateY(-2px);
+}
+
+.footer-github .github-icon {
+    font-size: 1.2rem;
+}
+
+.footer-year {
+    color: var(--text-secondary, #b0b0b0);
+    font-size: 0.8rem;
+    opacity: 0.6;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+    .footer-dev {
+        justify-content: center;
+    }
+    .footer-dev .separator {
+        display: none;
+    }
+    .footer-dev span {
+        display: block;
+        width: 100%;
+    }
+}
+
+/* ========================================
+   FOOTER
+   ======================================== */
+.site-footer {
+    background: linear-gradient(135deg, #0d0d0d, #1a1a2e);
+    border-top: 2px solid var(--accent-color, #e94560);
+    padding: 20px 30px;
+    margin-top: 30px;
+    border-radius: 12px 12px 0 0;
+    flex-shrink: 0;
+    width: 100%;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.footer-dev {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.footer-dev span {
+    color: var(--text-secondary, #b0b0b0);
+    font-size: 0.9rem;
+}
+
+.footer-dev .dev-name {
+    color: var(--text-primary, #fff);
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.footer-dev .dev-name:hover {
+    color: var(--accent-color, #e94560);
+}
+
+.footer-dev .separator {
+    color: var(--text-secondary, #b0b0b0);
+    opacity: 0.4;
+}
+
+.footer-github {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.footer-github a {
+    color: var(--text-secondary, #b0b0b0);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.footer-github a:hover {
+    color: var(--accent-color, #e94560);
+    transform: translateY(-2px);
+}
+
+.footer-github .github-icon {
+    font-size: 1.2rem;
+}
+
+.footer-year {
+    color: var(--text-secondary, #b0b0b0);
+    font-size: 0.8rem;
+    opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+    .footer-dev {
+        justify-content: center;
+    }
+    .footer-dev .separator {
+        display: none;
+    }
+    .footer-dev span {
+        display: block;
+        width: 100%;
+    }
+}

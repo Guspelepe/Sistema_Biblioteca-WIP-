@@ -11,19 +11,18 @@ body {
     font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
     background: var(--cor-fundo);
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column;
     min-height: 100vh;
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 /* ========================================
    CORES (MUDE AQUI)
    ======================================== */
 :root {
-    --cor-fundo: rgb(3, 2, 65);          /* fundo geral */
-    --cor-fundo-rgb: 3, 2, 65; /* mesmo valor em RGB */
-    --cor-destaque: #500465;       /* roxo mais claro para botões/hover */
+    --cor-fundo: rgb(3, 2, 65);
+    --cor-fundo-rgb: 3, 2, 65;
+    --cor-destaque: #500465;
     --sombra: 0 20px 60px rgba(0,0,0,0.35);
     --borda-card: 1px solid rgba(255,255,255,0.15);
 }
@@ -34,8 +33,9 @@ body {
 .landing-container {
     display: flex;
     width: 100vw;
-    height: 100vh;
+    min-height: 100vh;
     background: var(--cor-fundo);
+    flex: 1;
 }
 
 /* Coluna da imagem */
@@ -425,7 +425,7 @@ form {
     width: 100%;
     padding: 0 40px;
     text-align: center;
-    pointer-events: none; /* não atrapalha cliques */
+    pointer-events: none;
     z-index: 2;
 }
 
@@ -443,7 +443,6 @@ form {
     transition: opacity 0.5s ease;
 }
 
-/* Responsivo */
 @media (max-width: 768px) {
     .frase-container {
         bottom: 30px;
@@ -456,11 +455,119 @@ form {
 }
 
 /* ========================================
-   Validação
+   VALIDAÇÃO
    ======================================== */
 .msg-validacao {
     font-size: 0.75rem;
     margin-top: 2px;
     display: block;
     min-height: 1em;
+}
+
+/* ========================================
+   CARROSSEL – TRANSIÇÃO DE IMAGEM E FRASE
+   ======================================== */
+#imagem-destaque {
+    transition: opacity 0.5s ease;
+}
+
+#frase-destaque {
+    transition: opacity 0.5s ease;
+}
+
+/* ========================================
+   FOOTER (LANDING)
+   ======================================== */
+.site-footer {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-top: 2px solid var(--cor-destaque);
+    padding: 20px 30px;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.footer-dev {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.footer-dev span {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+.footer-dev .dev-name {
+    color: #fff;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.footer-dev .dev-name:hover {
+    color: var(--cor-destaque);
+}
+
+.footer-dev .separator {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.footer-github {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.footer-github a {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.footer-github a:hover {
+    color: var(--cor-destaque);
+    transform: translateY(-2px);
+}
+
+.footer-github .github-icon {
+    font-size: 1.2rem;
+}
+
+.footer-year {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+    .footer-dev {
+        justify-content: center;
+    }
+    .footer-dev .separator {
+        display: none;
+    }
+    .footer-dev span {
+        display: block;
+        width: 100%;
+    }
 }

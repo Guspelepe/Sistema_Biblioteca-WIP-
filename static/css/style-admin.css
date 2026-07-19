@@ -417,3 +417,201 @@ button.perigo:hover {
     display: block;
     min-height: 1em;
 }
+
+/* ========================================
+   FOOTER
+   ======================================== */
+.site-footer {
+    background: linear-gradient(135deg, #0d0d0d, #1a1a2e);
+    border-top: 2px solid var(--accent-color, #e94560);
+    padding: 20px 30px;
+    margin-top: 30px;
+    border-radius: 12px 12px 0 0;
+    flex-shrink: 0;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.footer-dev {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.footer-dev span {
+    color: var(--text-secondary, #b0b0b0);
+    font-size: 0.9rem;
+}
+
+.footer-dev .dev-name {
+    color: var(--text-primary, #fff);
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.footer-dev .dev-name:hover {
+    color: var(--accent-color, #e94560);
+}
+
+.footer-dev .separator {
+    color: var(--text-secondary, #b0b0b0);
+    opacity: 0.4;
+}
+
+.footer-github {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.footer-github a {
+    color: var(--text-secondary, #b0b0b0);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.footer-github a:hover {
+    color: var(--accent-color, #e94560);
+    transform: translateY(-2px);
+}
+
+.footer-github .github-icon {
+    font-size: 1.2rem;
+}
+
+.footer-year {
+    color: var(--text-secondary, #b0b0b0);
+    font-size: 0.8rem;
+    opacity: 0.6;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+    .footer-dev {
+        justify-content: center;
+    }
+    .footer-dev .separator {
+        display: none;
+    }
+    .footer-dev span {
+        display: block;
+        width: 100%;
+    }
+}
+
+/* ========================================
+   FOOTER
+   ======================================== */
+.site-footer {
+    background: linear-gradient(135deg, #0d0d0d, #1a1a2e);
+    border-top: 2px solid var(--accent-color, #e94560);
+    padding: 20px 30px;
+    margin-top: 30px;
+    border-radius: 12px 12px 0 0;
+    flex-shrink: 0;
+    width: 100%;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.footer-dev {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.footer-dev span {
+    color: var(--text-secondary, #b0b0b0);
+    font-size: 0.9rem;
+}
+
+.footer-dev .dev-name {
+    color: var(--text-primary, #fff);
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.footer-dev .dev-name:hover {
+    color: var(--accent-color, #e94560);
+}
+
+.footer-dev .separator {
+    color: var(--text-secondary, #b0b0b0);
+    opacity: 0.4;
+}
+
+.footer-github {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.footer-github a {
+    color: var(--text-secondary, #b0b0b0);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.footer-github a:hover {
+    color: var(--accent-color, #e94560);
+    transform: translateY(-2px);
+}
+
+.footer-github .github-icon {
+    font-size: 1.2rem;
+}
+
+.footer-year {
+    color: var(--text-secondary, #b0b0b0);
+    font-size: 0.8rem;
+    opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+    .footer-dev {
+        justify-content: center;
+    }
+    .footer-dev .separator {
+        display: none;
+    }
+    .footer-dev span {
+        display: block;
+        width: 100%;
+    }
+}

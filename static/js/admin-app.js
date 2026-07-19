@@ -5,7 +5,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('👤 Admin app iniciado.');
 
-    const MULTA_POR_DIA = 1.00; // valor em reais por dia de atraso
+    const MULTA_POR_DIA = 1.00;
 
     // Credenciais dos bibliotecários
     const BIBLIOTECARIOS = [
@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', function() {
     contentArea.innerHTML = '<p>Faça login para acessar o sistema.</p>';
     adminNomeSpan.textContent = 'Desconectado';
 
-    // Limpa qualquer sessão anterior que não seja de bibliotecário
     if (sessionStorage.getItem('perfil') !== 'bibliotecario') {
         sessionStorage.removeItem('logado');
         sessionStorage.removeItem('perfil');
@@ -37,7 +36,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===== FUNÇÃO AUXILIAR: MODAL DE MULTA =====
     function exibirModalMulta(diasAtraso, multa) {
         return new Promise((resolve) => {
-            // Remove qualquer modal anterior
             const existente = document.getElementById('modal-multa');
             if (existente) existente.remove();
 
@@ -55,11 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             document.body.appendChild(modal);
 
-            document.getElementById('btn-cancelar').onclick = () => {
-                modal.remove();
-                resolve(false);
-            };
-
+            document.getElementById('btn-cancelar').onclick = () => { modal.remove(); resolve(false); };
             document.getElementById('btn-pagar').onclick = () => {
                 modal.querySelector('div').innerHTML = `
                     <h3>👨‍💻 Desenvolvido por:</h3>
@@ -71,23 +65,35 @@ document.addEventListener('DOMContentLoaded', function() {
                     <button id="btn-confirmar-devolucao" style="margin:10px; padding:10px 20px; background:#3498db; color:#fff; border:none; border-radius:5px; cursor:pointer;">Confirmar Devolução</button>
                     <button id="btn-voltar" style="margin:10px; padding:10px 20px; background:#95a5a6; color:#fff; border:none; border-radius:5px; cursor:pointer;">Voltar</button>
                 `;
-                document.getElementById('btn-confirmar-devolucao').onclick = () => {
-                    modal.remove();
-                    resolve(true);
-                };
-                document.getElementById('btn-voltar').onclick = () => {
-                    modal.remove();
-                    resolve(false);
-                };
+                document.getElementById('btn-confirmar-devolucao').onclick = () => { modal.remove(); resolve(true); };
+                document.getElementById('btn-voltar').onclick = () => { modal.remove(); resolve(false); };
             };
         });
     }
 
-    // ===== FUNÇÕES DE RENDERIZAÇÃO =====
+    async function aguardarBanco() {
+        return new Promise((resolve) => {
+            if (typeof db !== 'undefined') {
+                resolve();
+                return;
+            }
+            const interval = setInterval(() => {
+                if (typeof db !== 'undefined') {
+                    clearInterval(interval);
+                    resolve();
+                }
+            }, 200);
+        });
+    }
+
+    // ================================================================
+    // RENDERIZAÇÕES
+    // ================================================================
+
+    // 1. USUÁRIOS
     async function renderUsuarios() {
         await aguardarBanco();
         const clientes = await db.clientes.toArray();
-        
         const alugueisAtivos = await db.alugueis.where('status').equals('ativo').toArray();
         const mapaAluguel = {};
         alugueisAtivos.forEach(a => { mapaAluguel[a.cliente_id] = a.livro; });
@@ -122,24 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
         contentArea.innerHTML = html;
     }
 
-    async function renderCatalogo() {
-        await aguardarBanco();
-        const livros = await db.livros.toArray();
-        let html = `<div class="card"><h3>Catálogo de Livros (${livros.length})</h3>`;
-        if (livros.length === 0) {
-            html += `<p>Nenhum livro cadastrado.</p>`;
-        } else {
-            html += `<table>
-                <thead><tr><th>Título</th><th>Autor</th><th>Ano</th><th>Editora</th></tr></thead><tbody>`;
-            livros.forEach(l => {
-                html += `<tr><td>${l.titulo}</td><td>${l.autor}</td><td>${l.ano}</td><td>${l.editora}</td></tr>`;
-            });
-            html += `</tbody></table>`;
-        }
-        html += `</div>`;
-        contentArea.innerHTML = html;
-    }
-
+    // 2. RELATÓRIO
     async function renderRelatorio() {
         await aguardarBanco();
         const alugueis = await db.alugueis.toArray();
@@ -219,43 +208,145 @@ document.addEventListener('DOMContentLoaded', function() {
         contentArea.innerHTML = html;
     }
 
+    // 3. CATÁLOGO
+    async function renderCatalogo() {
+        await aguardarBanco();
+        const livros = await db.livros.toArray();
+        let html = `<div class="card"><h3>Catálogo de Livros (${livros.length})</h3>`;
+        if (livros.length === 0) {
+            html += `<p>Nenhum livro cadastrado.</p>`;
+        } else {
+            html += `<table>
+                <thead><tr><th>Título</th><th>Autor</th><th>Ano</th><th>Editora</th></tr></thead><tbody>`;
+            livros.forEach(l => {
+                html += `<tr><td>${l.titulo}</td><td>${l.autor}</td><td>${l.ano}</td><td>${l.editora}</td></tr>`;
+            });
+            html += `</tbody></table>`;
+        }
+        html += `</div>`;
+        contentArea.innerHTML = html;
+    }
+
+    // 4. ADICIONAR LIVROS (NOVO)
+    async function renderAdicionarLivros() {
+        await aguardarBanco();
+        let html = `
+            <div class="card">
+                <h3>➕ Adicionar Novo Livro</h3>
+                <form id="form-adicionar-livro">
+                    <div>
+                        <label for="novo-titulo">Título</label>
+                        <input type="text" id="novo-titulo" placeholder="Nome do livro" required>
+                    </div>
+                    <div>
+                        <label for="novo-autor">Autor</label>
+                        <input type="text" id="novo-autor" placeholder="Nome do autor" required>
+                    </div>
+                    <div>
+                        <label for="novo-ano">Ano</label>
+                        <input type="number" id="novo-ano" placeholder="Ano de publicação" min="1000" max="2099" required>
+                    </div>
+                    <div>
+                        <label for="novo-editora">Editora</label>
+                        <input type="text" id="novo-editora" placeholder="Editora" required>
+                    </div>
+                    <div class="full-width">
+                        <button type="submit">Adicionar Livro</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card">
+                <h3>📚 Últimos Livros Adicionados</h3>
+                <div id="ultimos-livros-adicionados">
+                    <p>Carregando...</p>
+                </div>
+            </div>
+        `;
+        contentArea.innerHTML = html;
+
+        // Carrega os últimos 5 livros adicionados (mais recentes pelo ID)
+        async function carregarUltimosLivros() {
+            const livros = await db.livros.toArray();
+            const ultimos = livros.sort((a, b) => b.id - a.id).slice(0, 5);
+            const container = document.getElementById('ultimos-livros-adicionados');
+            if (ultimos.length === 0) {
+                container.innerHTML = '<p>Nenhum livro cadastrado ainda.</p>';
+                return;
+            }
+            let tabela = `<table>
+                <thead><tr><th>Título</th><th>Autor</th><th>Ano</th><th>Editora</th></tr></thead><tbody>`;
+            ultimos.forEach(l => {
+                tabela += `<tr><td>${l.titulo}</td><td>${l.autor}</td><td>${l.ano}</td><td>${l.editora}</td></tr>`;
+            });
+            tabela += `</tbody></table>`;
+            container.innerHTML = tabela;
+        }
+        carregarUltimosLivros();
+
+        // Evento de submit
+        document.getElementById('form-adicionar-livro').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const titulo = document.getElementById('novo-titulo').value.trim();
+            const autor = document.getElementById('novo-autor').value.trim();
+            const ano = parseInt(document.getElementById('novo-ano').value);
+            const editora = document.getElementById('novo-editora').value.trim();
+
+            if (!titulo || !autor || !ano || !editora) {
+                notificar('Preencha todos os campos.', 'erro');
+                return;
+            }
+
+            const existente = await db.livros.where('titulo').equals(titulo).first();
+            if (existente) {
+                notificar('Já existe um livro com este título.', 'erro');
+                return;
+            }
+
+            await db.livros.add({ titulo, autor, ano, editora });
+            notificar(`Livro "${titulo}" adicionado com sucesso.`);
+            document.getElementById('form-adicionar-livro').reset();
+            carregarUltimosLivros();
+        });
+    }
+
+    // 5. ALUGAR
     async function renderAlugar() {
         await aguardarBanco();
         const clientes = await db.clientes.toArray();
         const livros = await db.livros.toArray();
 
-        let html = `<div class="card"><h3>Realizar Aluguel</h3>`;
-        html += `<form id="form-alugar">
-            <div>
-                <label for="cliente-alugar">Cliente</label>
-                <select id="cliente-alugar" required>
-                    <option value="">Selecione...</option>`;
+        let html = `<div class="card"><h3>Realizar Aluguel</h3>
+            <form id="form-alugar">
+                <div>
+                    <label for="cliente-alugar">Cliente</label>
+                    <select id="cliente-alugar" required>
+                        <option value="">Selecione...</option>`;
         clientes.forEach(c => {
             html += `<option value="${c.id}">${c.nome} (${c.cpf})</option>`;
         });
         html += `</select></div>
-            <div>
-                <label for="livro-alugar">Livro</label>
-                <select id="livro-alugar" required>
-                    <option value="">Selecione...</option>`;
+                <div>
+                    <label for="livro-alugar">Livro</label>
+                    <select id="livro-alugar" required>
+                        <option value="">Selecione...</option>`;
         livros.forEach(l => {
             html += `<option value="${l.titulo}">${l.titulo}</option>`;
         });
         html += `</select></div>
-            <div>
-                <label for="data-locacao">Data de Locação</label>
-                <input type="date" id="data-locacao" required>
-            </div>
-            <div>
-                <label for="data-devolucao-prevista">Devolução Prevista (automática +7 dias)</label>
-                <input type="text" id="data-devolucao-prevista" readonly placeholder="Automático">
-                <input type="hidden" id="data-devolucao-prevista-iso">
-            </div>
-            <div class="full-width">
-                <button type="submit">Confirmar Aluguel</button>
-            </div>
-        </form>`;
-        html += `</div>`;
+                <div>
+                    <label for="data-locacao">Data de Locação</label>
+                    <input type="date" id="data-locacao" required>
+                </div>
+                <div>
+                    <label for="data-devolucao-prevista">Devolução Prevista (automática +7 dias)</label>
+                    <input type="text" id="data-devolucao-prevista" readonly placeholder="Automático">
+                    <input type="hidden" id="data-devolucao-prevista-iso">
+                </div>
+                <div class="full-width">
+                    <button type="submit">Confirmar Aluguel</button>
+                </div>
+            </form>
+        </div>`;
         contentArea.innerHTML = html;
 
         document.getElementById('data-locacao').addEventListener('change', function() {
@@ -267,7 +358,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('data-devolucao-prevista-iso').value = iso;
             } else {
                 document.getElementById('data-devolucao-prevista').value = '';
-                document.getElementById('data-devolucao-prevista-iso').value = ''; 
+                document.getElementById('data-devolucao-prevista-iso').value = '';
             }
         });
 
@@ -276,8 +367,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const clienteId = parseInt(document.getElementById('cliente-alugar').value);
             const livroTitulo = document.getElementById('livro-alugar').value;
             const dataLocacao = document.getElementById('data-locacao').value;
+            const dataDevolucaoPrevista = document.getElementById('data-devolucao-prevista-iso').value;
 
-            if (!clienteId || !livroTitulo || !dataLocacao) {
+            if (!clienteId || !livroTitulo || !dataLocacao || !dataDevolucaoPrevista) {
                 notificar('Preencha todos os campos.', 'erro');
                 return;
             }
@@ -298,7 +390,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cliente_id: clienteId,
                 livro: livroTitulo,
                 data_locacao: dataLocacao,
-                data_devolucao_prevista: document.getElementById('data-devolucao-prevista-iso').value,
+                data_devolucao_prevista: dataDevolucaoPrevista,
                 status: 'ativo'
             });
 
@@ -307,6 +399,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // 6. DEVOLVER
     async function renderDevolver() {
         await aguardarBanco();
         const clientes = await db.clientes.toArray();
@@ -369,9 +462,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const hoje = new Date().toISOString().split('T')[0];
-            let diasAtraso = 0;
-            let multa = 0;
-
+            let diasAtraso = 0, multa = 0;
             if (aluguel.data_devolucao_prevista) {
                 const prevista = new Date(aluguel.data_devolucao_prevista + 'T00:00:00');
                 const real = new Date(hoje + 'T00:00:00');
@@ -382,7 +473,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // NOVA LÓGICA: modal de multa quando há atraso
             if (diasAtraso > 0) {
                 const confirmado = await exibirModalMulta(diasAtraso, multa);
                 if (!confirmado) {
@@ -405,117 +495,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function renderCadastroUsuario() {
-        let html = `<div class="card"><h3>Cadastrar Novo Usuário</h3>
-            <form id="form-cadastro-usuario">
-                <div>
-                    <label for="nome">Nome Completo</label>
-                    <input type="text" id="nome" required>
-                </div>
-                <div>
-                    <label for="apelido">Apelido (nick)</label>
-                    <input type="text" id="apelido" placeholder="Como será chamado" required>
-                    <span id="msg-apelido-admin" class="msg-validacao"></span>
-                </div>
-                <div>
-                    <label for="cpf">CPF</label>
-                    <input type="text" id="cpf" placeholder="000.000.000-00" required maxlength="14" oninput="mascararCPF(this)">
-                    <span id="msg-cpf-admin" class="msg-validacao"></span>
-                </div>
-                <div>
-                    <label for="nascimento">Data de Nascimento</label>
-                    <input type="date" id="nascimento" required>
-                </div>
-                <div>
-                    <label for="senha-cliente">Senha</label>
-                    <input type="password" id="senha-cliente" placeholder="Mínimo 4 caracteres" required>
-                </div>
-                <div class="full-width">
-                    <button type="submit">Cadastrar</button>
-                </div>
-            </form>
-        </div>`;
-        contentArea.innerHTML = html;
-
-        document.getElementById('cpf').addEventListener('blur', async function() {
-            const cpfBruto = this.value.replace(/\D/g, '');
-            const span = document.getElementById('msg-cpf-admin');
-            if (!span) return;
-            if (cpfBruto.length === 11 && validarCPF(cpfBruto)) {
-                await aguardarBanco();
-                const cpfFormatado = cpfBruto.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-                const existente = await db.clientes.where('cpf').equals(cpfFormatado).first();
-                span.textContent = existente ? '❌ CPF já cadastrado.' : '✅ CPF disponível.';
-                span.style.color = existente ? '#e74c3c' : '#27ae60';
-            } else {
-                span.textContent = cpfBruto.length > 0 ? '❌ CPF inválido.' : '';
-                span.style.color = '#e74c3c';
-            }
-        });
-
-        document.getElementById('apelido').addEventListener('blur', async function() {
-            const apelido = this.value.trim();
-            const span = document.getElementById('msg-apelido-admin');
-            if (!span || !apelido) {
-                if (span) span.textContent = '';
-                return;
-            }
-            await aguardarBanco();
-            const existente = await db.clientes.where('apelido').equalsIgnoreCase(apelido).first();
-            span.textContent = existente ? '❌ Apelido já está em uso.' : '✅ Apelido disponível.';
-            span.style.color = existente ? '#e74c3c' : '#27ae60';
-        });
-
-        document.getElementById('form-cadastro-usuario').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const nome = document.getElementById('nome').value.trim();
-            const apelido = document.getElementById('apelido').value.trim();
-            const cpfBruto = document.getElementById('cpf').value.replace(/\D/g, '');
-            const nascimento = document.getElementById('nascimento').value;
-            const senha = document.getElementById('senha-cliente').value;
-
-            if (!validarCPF(cpfBruto)) {
-                notificar('CPF inválido. Verifique os dígitos.', 'erro');
-                return;
-            }
-
-            if (!nome || !apelido || cpfBruto.length !== 11 || !nascimento || !senha) {
-                notificar('Preencha todos os campos corretamente.', 'erro');
-                return;
-            }
-            
-            const cpfFormatado = cpfBruto.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-            
-            const cpfExistente = await db.clientes.where('cpf').equals(cpfFormatado).first();
-            if (cpfExistente) {
-                notificar('CPF já cadastrado.', 'erro');
-                return;
-            }
-
-            const apelidoExistente = await db.clientes.where('apelido').equalsIgnoreCase(apelido).first();
-            if (apelidoExistente) {
-                notificar('Apelido já está em uso.', 'erro');
-                return;
-            }
-            
-            await db.clientes.add({ 
-                nome, 
-                apelido, 
-                cpf: cpfFormatado, 
-                nascimento, 
-                senha,
-                livros_lidos: 0, 
-                media_estrelas: 0, 
-                lendo_agora: '', 
-                bio: '',
-                foto: ''
-            });
-            
-            notificar(`Usuário ${nome} cadastrado com sucesso!`);
-            document.getElementById('form-cadastro-usuario').reset();
-            renderUsuarios();
-        });
+    // ===== AUXILIARES =====
+    function notificar(mensagem, tipo = 'sucesso') {
+        const notif = document.getElementById('notificacao');
+        notif.textContent = mensagem;
+        notif.className = 'notificacao ' + (tipo === 'erro' ? 'erro' : '');
+        notif.style.display = 'block';
+        setTimeout(() => { notif.style.display = 'none'; }, 4000);
     }
+
+    window.mascararCPF = function(input) {
+        let cpf = input.value.replace(/\D/g, '');
+        if (cpf.length > 11) cpf = cpf.substring(0, 11);
+        let formatado = cpf;
+        if (cpf.length > 3) formatado = cpf.substring(0, 3) + '.' + cpf.substring(3);
+        if (cpf.length > 6) formatado = formatado.substring(0, 7) + '.' + cpf.substring(6);
+        if (cpf.length > 9) formatado = formatado.substring(0, 11) + '-' + cpf.substring(9);
+        input.value = formatado;
+    };
 
     // ===== LOGIN DO ADMIN =====
     loginForm.addEventListener('submit', function(e) {
@@ -546,36 +543,6 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = 'index.html';
     });
 
-    // ===== NAVEGAÇÃO =====
-    const menuLinks = document.querySelectorAll('.sidebar-nav a[data-section]');
-    menuLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const section = this.getAttribute('data-section');
-            const titles = {
-                'usuarios': 'Usuários',
-                'catalogo': 'Catálogo',
-                'relatorio': 'Relatório',
-                'alugar': 'Alugar Livro',
-                'devolver': 'Devolver Livro',
-                'cadastro-usuario': 'Novo Usuário'
-            };
-            sectionTitle.textContent = titles[section] || section;
-            menuLinks.forEach(l => l.classList.remove('active'));
-            this.classList.add('active');
-
-            switch (section) {
-                case 'usuarios': renderUsuarios(); break;
-                case 'catalogo': renderCatalogo(); break;
-                case 'relatorio': renderRelatorio(); break;
-                case 'alugar': renderAlugar(); break;
-                case 'devolver': renderDevolver(); break;
-                case 'cadastro-usuario': renderCadastroUsuario(); break;
-                default: contentArea.innerHTML = '<p>Seção em desenvolvimento.</p>';
-            }
-        });
-    });
-
     // ===== TEMA =====
     const temaBtn = document.getElementById('tema-btn');
     if (temaBtn) {
@@ -592,7 +559,42 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ===== INICIALIZAÇÃO =====
+    // ================================================================
+    // NAVEGAÇÃO (ATUALIZADA)
+    // ================================================================
+    const menuLinks = document.querySelectorAll('.sidebar-nav a[data-section]');
+    menuLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const section = this.getAttribute('data-section');
+            const titles = {
+                'usuarios': 'Usuários',
+                'relatorio': 'Relatório',
+                'catalogo': 'Catálogo',
+                'adicionar-livros': 'Adicionar Livros',
+                'alugar': 'Alugar Livro',
+                'devolver': 'Devolver'
+            };
+            sectionTitle.textContent = titles[section] || section;
+
+            menuLinks.forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
+
+            switch (section) {
+                case 'usuarios': renderUsuarios(); break;
+                case 'relatorio': renderRelatorio(); break;
+                case 'catalogo': renderCatalogo(); break;
+                case 'adicionar-livros': renderAdicionarLivros(); break;
+                case 'alugar': renderAlugar(); break;
+                case 'devolver': renderDevolver(); break;
+                default: contentArea.innerHTML = '<p>Seção em desenvolvimento.</p>';
+            }
+        });
+    });
+
+    // ================================================================
+    // INICIALIZAÇÃO
+    // ================================================================
     if (sessionStorage.getItem('logado') === 'true' && sessionStorage.getItem('perfil') === 'bibliotecario') {
         loginModal.style.display = 'none';
         adminNomeSpan.textContent = sessionStorage.getItem('usuario');

@@ -2,22 +2,13 @@
 // db.js – Configuração do Dexie (global)
 // ==========================================
 
+// Cria a instância do banco apenas uma vez
 window.db = new Dexie('BibliotecaDB');
 
-// ===== VERSÃO 6 – tabelas finais =====
-db.version(6).stores({
-    clientes: '++id, cpf, nome, apelido, foto, livros_lidos, media_estrelas, lendo_agora, bio, nascimento',
-    alugueis: '++id, cliente_id, status, livro',
-    livros: '++id, titulo',
-    solicitacoes: '++id, usuario_id',
-    avaliacoes: '++id, livro, usuario_id, nota, comentario, data',
-    frases: '++id, texto, autor'
-});
-
-// ===== VERSÃO 7 – adiciona campos de multa na tabela alugueis =====
+// ===== VERSÃO 7 – inclui campos de multa =====
 db.version(7).stores({
     clientes: '++id, cpf, nome, apelido, foto, livros_lidos, media_estrelas, lendo_agora, bio, nascimento',
-    alugueis: '++id, cliente_id, status, livro, dias_atraso, multa', // novos campos
+    alugueis: '++id, cliente_id, status, livro, dias_atraso, multa',
     livros: '++id, titulo',
     solicitacoes: '++id, usuario_id',
     avaliacoes: '++id, livro, usuario_id, nota, comentario, data',
@@ -174,13 +165,13 @@ const FRASES_INICIAIS = [
 // 3. USUÁRIOS FIXOS (10)
 // ==========================================
 const USUARIOS_FIXOS = [
-    { nome: 'Julia Akemi', apelido: 'Juch', cpf: '111.111.111-11', foto: 'ju.jpg', livros_lidos: 25, media_estrelas: 4.5, lendo_agora: 'Evangelion', senha: '1234' },
+    { nome: 'Julia Akemi', apelido: 'Juch', cpf: '111.111.111-11', foto: 'ju.jpg', livros_lidos: 29, media_estrelas: 4.5, lendo_agora: 'Evangelion', senha: '1234' },
     { nome: 'Gustavo Pelepe', apelido: 'Guspelepe', cpf: '222.222.222-22', foto: 'gu.jpg', livros_lidos: 10, media_estrelas: 3.5, lendo_agora: 'Haikyu', senha: '1234' },
     { nome: 'Ronaldo Karas', apelido: 'Karas', cpf: '333.333.333-33', foto: 'karas.jpg', livros_lidos: 12, media_estrelas: 4.0, lendo_agora: 'Python Avançado', senha: '1234' },
     { nome: 'Douglas Becker', apelido: 'Douglas404', cpf: '444.444.444-44', foto: 'douglas.jpg', livros_lidos: 14, media_estrelas: 3.0, lendo_agora: 'O Hobbit', senha: '1234' },
     { nome: 'Mariana Oliveira', apelido: 'Mary', cpf: '555.555.555-55', foto: 'mariana.jpg', livros_lidos: 18, media_estrelas: 4.2, lendo_agora: 'Dom Casmurro', senha: '1234' },
     { nome: 'Felipe Santos', apelido: 'Felps', cpf: '666.666.666-66', foto: 'felipe.jpg', livros_lidos: 9, media_estrelas: 3.8, lendo_agora: 'One Piece', senha: '1234' },
-    { nome: 'Camila Ferreira', apelido: 'Cami', cpf: '777.777.777-77', foto: 'camila.jpg', livros_lidos: 30, media_estrelas: 4.9, lendo_agora: 'Orgulho e Preconceito', senha: '1234' },
+    { nome: 'Camila Ferreira', apelido: 'Cami', cpf: '777.777.777-77', foto: 'camila.jpg', livros_lidos: 26, media_estrelas: 4.9, lendo_agora: 'Orgulho e Preconceito', senha: '1234' },
     { nome: 'Lucas Almeida', apelido: 'Luquinhas', cpf: '888.888.888-88', foto: 'lucas.jpg', livros_lidos: 16, media_estrelas: 4.1, lendo_agora: 'Clean Code', senha: '1234' },
     { nome: 'Beatriz Costa', apelido: 'Bia', cpf: '999.999.999-99', foto: 'bia.jpg', livros_lidos: 21, media_estrelas: 4.7, lendo_agora: 'Percy Jackson', senha: '1234' },
     { nome: 'Henrique Martins', apelido: 'HMartins', cpf: '101.010.101-01', foto: 'henrique.jpg', livros_lidos: 13, media_estrelas: 3.9, lendo_agora: '1984', senha: '1234' }
