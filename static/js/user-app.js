@@ -3,7 +3,7 @@
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('User app iniciado.');
+    console.warn('User app iniciado.');
 
     const MULTA_POR_DIA = 1.00;
 
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:9999;';
             modal.innerHTML = `
                 <div style="background:#fff; padding:30px; border-radius:8px; max-width:450px; width:90%; text-align:center;">
-                    <h3 style="color:#e74c3c;">Devolução com Atraso</h3>
+                    <h3 style="color:#e74c3c;">⚠️ Devolução com Atraso</h3>
                     <p>Atraso de <strong>${diasAtraso} dia(s)</strong>.</p>
                     <p>Multa: <strong>R$ ${multa.toFixed(2)}</strong></p>
                     <button id="btn-pagar" style="margin:10px; padding:10px 20px; background:#27ae60; color:#fff; border:none; border-radius:5px; cursor:pointer;">Pagar</button>
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
             userNome.textContent = usuarioAtual.nome.split(' ')[0] || usuarioAtual.nome;
             userApelido.textContent = usuarioAtual.apelido || '';
             userAvatar.src = usuarioAtual.foto || 'static/src/avatares/usuario.jpg';
-            console.log('Usuário carregado:', usuarioAtual.nome);
+            console.warn('Usuário carregado:', usuarioAtual.nome);
         } catch (err) {
             console.error('Erro ao carregar usuário:', err);
             notificar('Erro ao carregar dados do usuário.', 'erro');
@@ -113,12 +113,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ================================================================
-    // PÁGINA INICIAL (com abas e comunidade)
+    // PÁGINA INICIAL
     // ================================================================
     async function renderInicio() {
         try {
             await aguardarBanco();
-            console.log(' Renderizando página inicial...');
+            console.warn('Renderizando página inicial...');
 
             async function renderizarAba(tipo) {
                 const gradeContainer = document.getElementById('grade-destaques');
@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </div>
                                     <div class="info" style="text-align:center;">
                                         <h4>${apelido}</h4>
-                                        <span style="font-size:0.8rem; color: var(--text-secondary);"> ${u.livros_lidos} livros lidos</span>
+                                        <span style="font-size:0.8rem; color: var(--text-secondary);">${u.livros_lidos} livros lidos</span>
                                     </div>
                                 </div>
                             `;
@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
             clientes.forEach(c => { mapaClientes[c.id] = { nome: c.nome, apelido: c.apelido || c.nome, foto: c.foto || '' }; });
             avaliacoes.sort((a, b) => new Date(b.data) - new Date(a.data));
 
-            html += `<div class="card-user"><h3> Comunidade - Avaliações</h3>`;
+            html += `<div class="card-user"><h3>Comunidade - Avaliações</h3>`;
             if (avaliacoes.length === 0) {
                 html += `<p>Ainda não há avaliações. Seja o primeiro!</p>`;
             } else {
@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 renderInicio();
             });
 
-            console.log('Página inicial renderizada.');
+            console.warn('Página inicial renderizada.');
         } catch (err) {
             console.error('Erro ao renderizar início:', err);
             contentUser.innerHTML = '<p>Erro ao carregar a página inicial.</p>';
@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function renderBiblioteca() {
         try {
             await aguardarBanco();
-            console.log('Renderizando biblioteca...');
+            console.warn('Renderizando biblioteca...');
             const livros = await db.livros.toArray();
             const alugueisAtivos = await db.alugueis.where({ status: 'ativo' }).toArray();
             const livrosAlugados = new Set(alugueisAtivos.map(a => a.livro.split(' - ')[0].trim().toLowerCase()));
@@ -330,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             html += `</div></div>`;
             contentUser.innerHTML = html;
-            console.log('Biblioteca renderizada.');
+            console.warn('Biblioteca renderizada.');
         } catch (err) {
             console.error('Erro ao renderizar biblioteca:', err);
             contentUser.innerHTML = '<p>Erro ao carregar a biblioteca.</p>';
@@ -343,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function renderMeusLivros() {
         try {
             await aguardarBanco();
-            console.log('Renderizando meus livros...');
+            console.warn('Renderizando meus livros...');
             const alugueis = await db.alugueis.where({ cliente_id: usuarioId }).toArray();
             if (alugueis.length === 0) {
                 contentUser.innerHTML = `<div class="card-user"><h3>Meus Livros</h3><p>Você ainda não alugou nenhum livro.</p></div>`;
@@ -394,7 +394,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             html += `</tbody></table></div>`;
             contentUser.innerHTML = html;
-            console.log('Meus livros renderizados.');
+            console.warn('Meus livros renderizados.');
         } catch (err) {
             console.error('Erro ao renderizar meus livros:', err);
             contentUser.innerHTML = '<p>Erro ao carregar seus livros.</p>';
@@ -408,9 +408,8 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             await aguardarBanco();
             if (!usuarioAtual) await carregarUsuario();
-            console.log('Renderizando perfil (visualização)...');
+            console.warn('Renderizando perfil (visualização)...');
 
-            // Busca as avaliações do usuário
             const avaliacoes = await db.avaliacoes.where('usuario_id').equals(usuarioId).toArray();
             avaliacoes.sort((a, b) => new Date(b.data) - new Date(a.data));
 
@@ -428,10 +427,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p style="color:var(--text-secondary); font-size:1rem; margin-top:4px;">${usuarioAtual.nome}</p>
                     </div>
                 </div>
-            `;
-
-            // Sobre
-            html += `
                 <div class="card-user">
                     <h3>Sobre</h3>
                     <p><strong>Bio:</strong> ${bio}</p>
@@ -440,7 +435,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
 
-            // Avaliações do usuário
             html += `<div class="card-user"><h3>Minhas Avaliações</h3>`;
             if (avaliacoes.length === 0) {
                 html += `<p>Você ainda não fez nenhuma avaliação.</p>`;
@@ -458,7 +452,7 @@ document.addEventListener('DOMContentLoaded', function() {
             html += `</div>`;
 
             contentUser.innerHTML = html;
-            console.log('Perfil renderizado.');
+            console.warn('Perfil renderizado.');
         } catch (err) {
             console.error('Erro ao renderizar perfil:', err);
             contentUser.innerHTML = '<p>Erro ao carregar perfil.</p>';
@@ -466,13 +460,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ================================================================
-    // EDITAR PERFIL (FORMULÁRIO COM ABAS - CORRIGIDO)
+    // EDITAR PERFIL
     // ================================================================
     async function renderEditarPerfil() {
         try {
             await aguardarBanco();
             if (!usuarioAtual) await carregarUsuario();
-            console.log('Renderizando editar perfil...');
+            console.warn('Renderizando editar perfil...');
 
             const bio = usuarioAtual.bio || '';
             const nascimento = usuarioAtual.nascimento || '';
@@ -482,14 +476,11 @@ document.addEventListener('DOMContentLoaded', function() {
             let html = `
                 <div class="card-user">
                     <h3>Editar Perfil</h3>
-
-                    <!-- PERFIL -->
                     <h4 style="margin-top:20px; border-bottom:1px solid var(--border-color); padding-bottom:8px; color:var(--accent-color);">PERFIL</h4>
                     <div style="display:grid; grid-template-columns:1fr; gap:16px; margin-top:16px;">
                         <div>
                             <label style="font-weight:500; color:var(--text-secondary); display:block; margin-bottom:4px;">URL da foto (avatar) – opcional</label>
                             <input type="text" id="edit-foto" placeholder="Deixe em branco para manter a atual" value="${foto}" style="width:100%; padding:10px 14px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-card); color:var(--text-primary);">
-                            <small style="color:var(--text-secondary);">Deixe em branco para manter a foto atual</small>
                         </div>
                         <div>
                             <label style="font-weight:500; color:var(--text-secondary); display:block; margin-bottom:4px;">Bio (descrição curta)</label>
@@ -504,8 +495,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             <input type="date" id="edit-nascimento" value="${nascimento}" style="width:100%; padding:10px 14px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-card); color:var(--text-primary);">
                         </div>
                     </div>
-
-                    <!-- USUÁRIO -->
                     <h4 style="margin-top:30px; border-bottom:1px solid var(--border-color); padding-bottom:8px; color:var(--accent-color);">USUÁRIO</h4>
                     <div style="display:grid; grid-template-columns:1fr; gap:16px; margin-top:16px;">
                         <div>
@@ -514,26 +503,21 @@ document.addEventListener('DOMContentLoaded', function() {
                             <small style="color:var(--text-secondary);">Mínimo 4 caracteres</small>
                         </div>
                     </div>
-
                     <button type="submit" id="btn-salvar-perfil" class="btn-user" style="margin-top:30px; width:100%;">Salvar alterações</button>
                 </div>
             `;
             contentUser.innerHTML = html;
 
-            // ===== EVENTO DE SALVAR (CORRIGIDO) =====
             document.getElementById('btn-salvar-perfil').addEventListener('click', async function(e) {
                 e.preventDefault();
-
-                // Lê os valores do formulário
                 const foto = document.getElementById('edit-foto').value.trim();
                 const bio = document.getElementById('edit-bio').value.trim();
                 const lendoAgora = document.getElementById('edit-lendo').value.trim();
                 const nascimento = document.getElementById('edit-nascimento').value;
                 const novaSenha = document.getElementById('edit-senha').value.trim();
 
-                console.log('📤 Salvando perfil:', { foto, bio, lendoAgora, nascimento, novaSenha });
+                console.warn('Salvando perfil:', { foto, bio, lendoAgora, nascimento, novaSenha });
 
-                // Monta o objeto de atualização
                 const atualizacao = {};
                 if (foto) atualizacao.foto = foto;
                 if (bio) atualizacao.bio = bio;
@@ -541,7 +525,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (nascimento) atualizacao.nascimento = nascimento;
                 if (novaSenha && novaSenha.length >= 4) atualizacao.senha = novaSenha;
 
-                // Se não houver nenhum campo para atualizar, avisa e sai
                 if (Object.keys(atualizacao).length === 0) {
                     notificar('Nenhuma alteração foi feita.', 'erro');
                     return;
@@ -550,22 +533,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 try {
                     await aguardarBanco();
                     await db.clientes.update(usuarioId, atualizacao);
-                    console.log('Perfil atualizado com sucesso!', atualizacao);
-
-                    // Atualiza a sidebar
                     if (foto) userAvatar.src = foto;
-
-                    // Recarrega os dados do usuário
                     usuarioAtual = await db.clientes.get(usuarioId);
                     notificar('Perfil atualizado com sucesso!');
-                    renderEditarPerfil(); // recarrega a tela de edição
+                    renderEditarPerfil();
                 } catch (err) {
                     console.error('Erro ao salvar perfil:', err);
                     notificar('Erro ao salvar alterações.', 'erro');
                 }
             });
 
-            console.log('Editar perfil renderizado.');
+            console.warn('Editar perfil renderizado.');
         } catch (err) {
             console.error('Erro ao renderizar editar perfil:', err);
             contentUser.innerHTML = '<p>Erro ao carregar edição de perfil.</p>';
@@ -573,8 +551,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ================================================================
-    // FUNÇÕES GLOBAIS (renovar, devolver, abrir livro, notificar, logout)
+    // SOLICITAR LIVROS
     // ================================================================
+    async function renderSolicitarLivros() {
+        contentUser.innerHTML = `
+            <div class="card-user" style="text-align:center; padding:40px;">
+                <h3>Solicitar Livros</h3>
+                <p style="color:var(--text-secondary); font-size:1.1rem; margin-top:20px;">
+                    Em breve você poderá solicitar novos livros para a biblioteca.
+                </p>
+                <p style="color:var(--text-secondary);">Esta funcionalidade está em desenvolvimento.</p>
+            </div>
+        `;
+    }
+
+    // ===== FUNÇÕES GLOBAIS (renovar, devolver, abrir livro, notificar, logout) =====
     window.abrirLivro = function(titulo) {
         notificar(`Detalhes de "${titulo}" em breve.`, 'info');
     };
@@ -661,7 +652,7 @@ document.addEventListener('DOMContentLoaded', function() {
     logoutBtn.addEventListener('click', logout);
 
     // ================================================================
-    // NAVEGAÇÃO
+    // NAVEGAÇÃO (ATUALIZADA COM TODAS AS SEÇÕES)
     // ================================================================
     const menuLinks = document.querySelectorAll('.menu-user a[data-section]');
     menuLinks.forEach(link => {
@@ -673,7 +664,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 'perfil': 'Perfil',
                 'editar-perfil': 'Editar Perfil',
                 'biblioteca': 'Biblioteca',
-                'meus-livros': 'Meus Livros'
+                'meus-livros': 'Meus Livros',
+                'solicitar-livros': 'Solicitar Livros'
             };
             sectionTitle.textContent = titles[section] || section;
 
@@ -686,6 +678,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 case 'editar-perfil': renderEditarPerfil(); break;
                 case 'biblioteca': renderBiblioteca(); break;
                 case 'meus-livros': renderMeusLivros(); break;
+                case 'solicitar-livros': renderSolicitarLivros(); break;
                 default: contentUser.innerHTML = '<p>Seção em desenvolvimento.</p>';
             }
         });
@@ -702,52 +695,5 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Erro na inicialização:', err);
         contentUser.innerHTML = '<p>Erro ao iniciar o painel. Recarregue a página.</p>';
     });
-});
 
-    // ================================================================
-    // SOLICITAR LIVROS (placeholder)
-    // ================================================================
-    async function renderSolicitarLivros() {
-        contentUser.innerHTML = `
-            <div class="card-user" style="text-align:center; padding:40px;">
-                <h3>Solicitar Livros</h3>
-                <p style="color:var(--text-secondary); font-size:1.1rem; margin-top:20px;">
-                    Em breve você poderá solicitar novos livros para a biblioteca.
-                </p>
-                <p style="color:var(--text-secondary);">Esta funcionalidade está em desenvolvimento.</p>
-            </div>
-        `;
-    }
-
-    // ================================================================
-    // NAVEGAÇÃO (ATUALIZADA)
-    // ================================================================
-    const menuLinks = document.querySelectorAll('.menu-user a[data-section]');
-    menuLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const section = this.getAttribute('data-section');
-            const titles = {
-                'inicio': 'Página Inicial',
-                'perfil': 'Perfil',
-                'biblioteca': 'Biblioteca',
-                'meus-livros': 'Meus Livros',
-                'solicitar-livros': 'Solicitar Livros',
-                'editar-perfil': 'Editar Perfil'
-            };
-            sectionTitle.textContent = titles[section] || section;
-
-            menuLinks.forEach(l => l.classList.remove('active'));
-            this.classList.add('active');
-
-            switch (section) {
-                case 'inicio': renderInicio(); break;
-                case 'perfil': renderPerfil(); break;
-                case 'biblioteca': renderBiblioteca(); break;
-                case 'meus-livros': renderMeusLivros(); break;
-                case 'solicitar-livros': renderSolicitarLivros(); break;
-                case 'editar-perfil': renderEditarPerfil(); break;
-                default: contentUser.innerHTML = '<p>Vai trabaia</p>';
-            }
-        });
-    });
+}); // FIM DO DOMContentLoaded

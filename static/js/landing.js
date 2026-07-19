@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===== BUSCA USUÁRIO =====
     async function buscarUsuarioPorIdentificador(identificador) {
-        console.log('🔍 Buscando por:', identificador);
+        console.warn('🔍 Buscando por:', identificador);
         const cpfLimpo = identificador.replace(/\D/g, '');
 
         if (cpfLimpo.length === 11) {
@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const cliente = await db.clientes.where('cpf').equals(cpfFormatado).first();
                 if (cliente) {
-                    console.log('✅ Encontrado por CPF:', cliente.nome);
+                    console.warn('✅ Encontrado por CPF:', cliente.nome);
                     return cliente;
                 }
             } catch (e) { console.warn('Erro CPF:', e); }
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const cliente = await db.clientes.where('apelido').equalsIgnoreCase(identificador).first();
             if (cliente) {
-                console.log('✅ Encontrado por apelido:', cliente.nome);
+                console.warn('✅ Encontrado por apelido:', cliente.nome);
                 return cliente;
             }
         } catch (e) { console.warn('Erro apelido:', e); }
@@ -199,12 +199,12 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const cliente = await db.clientes.where('nome').equalsIgnoreCase(identificador).first();
             if (cliente) {
-                console.log('✅ Encontrado por nome:', cliente.nome);
+                console.warn('✅ Encontrado por nome:', cliente.nome);
                 return cliente;
             }
         } catch (e) { console.warn('Erro nome:', e); }
 
-        console.log('🔍 Fallback manual...');
+        console.warn('🔍 Fallback manual...');
         const todos = await db.clientes.toArray();
         const cliente = todos.find(c => {
             const matchCpf = c.cpf && c.cpf.replace(/\D/g, '') === cpfLimpo;
@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const matchNome = c.nome && c.nome.toLowerCase() === identificador.toLowerCase();
             return matchCpf || matchNick || matchNome;
         });
-        if (cliente) console.log('✅ Encontrado no fallback:', cliente.nome);
+        if (cliente) console.warn('✅ Encontrado no fallback:', cliente.nome);
         else console.warn('❌ Nenhum cliente encontrado.');
         return cliente || null;
     }
@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 sessionStorage.setItem('usuario', cliente.nome);
                 sessionStorage.setItem('usuarioId', cliente.id);
                 sessionStorage.setItem('cpf', cliente.cpf);
-                console.log('✅ Login bem-sucedido! Redirecionando para user.html');
+                console.warn('✅ Login bem-sucedido! Redirecionando para user.html');
                 window.location.href = 'user.html';
             } else {
                 erroLogin.textContent = 'Usuário ou senha inválidos.';
@@ -392,5 +392,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    console.log('✅ Landing page carregada com carrossel.');
+    console.warn('✅ Landing page carregada com carrossel.');
 });

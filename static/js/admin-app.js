@@ -3,7 +3,7 @@
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('👤 Admin app iniciado.');
+    console.warn('👤 Admin app iniciado.');
 
     const MULTA_POR_DIA = 1.00;
 

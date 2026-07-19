@@ -224,7 +224,7 @@ async function seedDatabase() {
     try {
         const existing = await db.clientes.where('foto').notEqual('').toArray();
         if (existing.length >= 10) {
-            console.log(`⏭️ Já existem ${existing.length} usuários. Pulando seed.`);
+            console.warn(`⏭️ Já existem ${existing.length} usuários. Pulando seed.`);
             return;
         }
 
@@ -232,10 +232,10 @@ async function seedDatabase() {
             for (let u of existing) await db.clientes.delete(u.id);
             const ids = existing.map(u => u.id);
             await db.avaliacoes.where('usuario_id').anyOf(ids).delete();
-            console.log('🗑️ Usuários antigos removidos.');
+            console.warn('🗑️ Usuários antigos removidos.');
         }
 
-        console.log('🌱 Criando 10 usuários fixos...');
+        console.warn('🌱 Criando 10 usuários fixos...');
 
         for (const usuario of USUARIOS_FIXOS) {
             const id = await db.clientes.add({
@@ -289,7 +289,7 @@ async function seedDatabase() {
             }
         }
 
-        console.log('✅ Seed concluído.');
+        console.warn('✅ Seed concluído.');
     } catch (err) {
         console.error('❌ Erro no seed:', err);
     }
@@ -302,7 +302,7 @@ async function popularFrases() {
     const count = await db.frases.count();
     if (count === 0) {
         await db.frases.bulkAdd(FRASES_INICIAIS);
-        console.log('📝 Frases inicializadas.');
+        console.warn('📝 Frases inicializadas.');
     }
 }
 
@@ -311,15 +311,15 @@ async function popularFrases() {
 // ==========================================
 db.on('ready', async () => {
     try {
-        console.log('🔧 Inicializando banco...');
+        console.warn('🔧 Inicializando banco...');
 
         // 1. Livros
         const countLivros = await db.livros.count();
         if (countLivros === 0) {
             await db.livros.bulkAdd(LIVROS_INICIAIS);
-            console.log(`📚 ${LIVROS_INICIAIS.length} livros inicializados.`);
+            console.warn(`📚 ${LIVROS_INICIAIS.length} livros inicializados.`);
         } else {
-            console.log(`📚 Já existem ${countLivros} livros. Pulando.`);
+            console.warn(`📚 Já existem ${countLivros} livros. Pulando.`);
         }
 
         // 2. Cliente padrão
@@ -337,7 +337,7 @@ db.on('ready', async () => {
                 lendo_agora: '',
                 bio: ''
             });
-            console.log('👤 Cliente padrão criado.');
+            console.warn('👤 Cliente padrão criado.');
         } else if (clientePadrao.senha !== '123456') {
             await db.clientes.update(clientePadrao.id, { senha: '123456' });
         }
@@ -355,7 +355,7 @@ db.on('ready', async () => {
         // 5. Frases
         await popularFrases();
 
-        console.log('✅ Banco de dados pronto.');
+        console.warn('✅ Banco de dados pronto.');
     } catch (err) {
         console.error('❌ Erro na inicialização:', err);
     }
