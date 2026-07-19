@@ -156,22 +156,6 @@ document.addEventListener('DOMContentLoaded', function() {
     iniciarCarrosselImagens();
     iniciarCarrosselFrases();
 
-    // ===== FUNÇÃO AGUARDAR BANCO =====
-    async function aguardarBanco() {
-        return new Promise((resolve) => {
-            if (typeof db !== 'undefined') {
-                resolve();
-                return;
-            }
-            const interval = setInterval(() => {
-                if (typeof db !== 'undefined') {
-                    clearInterval(interval);
-                    resolve();
-                }
-            }, 200);
-        });
-    }
-
     // ===== BUSCA USUÁRIO =====
     async function buscarUsuarioPorIdentificador(identificador) {
         console.warn('🔍 Buscando por:', identificador);
@@ -378,19 +362,6 @@ document.addEventListener('DOMContentLoaded', function() {
             erroRegistro.style.display = 'block';
         }
     });
-
-    // ===== MOSTRAR SENHA =====
-    window.toggleSenha = function(inputId, botao) {
-        const input = document.getElementById(inputId);
-        if (!input) return;
-        if (input.type === 'password') {
-            input.type = 'text';
-            botao.textContent = '🙈';
-        } else {
-            input.type = 'password';
-            botao.textContent = '👁️';
-        }
-    };
 
     console.warn('✅ Landing page carregada com carrossel.');
 });

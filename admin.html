@@ -15,7 +15,10 @@
                 <label>Usuário</label>
                 <input type="text" id="login-user" placeholder="ana ou carlos">
                 <label>Senha</label>
-                <input type="password" id="login-pass" placeholder="senha">
+                <div style="position: relative;">
+                    <input type="password" id="login-pass" placeholder="senha" style="width: 100%; padding-right: 40px;">
+                    <button type="button" onclick="toggleSenha('login-pass', this)" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: transparent; border: none; cursor: pointer; font-size: 1.2rem; color: #666; padding: 0; width: auto;">👁️</button>
+                </div>
                 <button type="submit" style="width:100%; margin-top:10px;">Entrar</button>
             </form>
             <p id="login-error" style="color:#e74c3c; display:none; margin-top:10px;">Credenciais inválidas.</p>
