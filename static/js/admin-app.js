@@ -3,7 +3,7 @@
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.warn('👤 Admin app iniciado.');
+    console.log('👤 Admin app iniciado.');
 
     const MULTA_POR_DIA = 1.00;
 
@@ -566,13 +566,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 7. SOLICITAÇÕES DE LIVROS
+    // 7. SOLICITAÇÕES DE LIVROS (com modal de detalhes)
     async function renderSolicitacoes() {
         await aguardarBanco();
         const solicitacoes = await db.solicitacoes.toArray();
         const clientes = await db.clientes.toArray();
         const mapaClientes = {};
-        clientes.forEach(c => { mapaClientes[c.id] = c.nome; });
+        clientes.forEach(c => { mapaClientes[c.id] = { nome: c.nome, apelido: c.apelido }; });
 
         solicitacoes.sort((a, b) => new Date(b.data) - new Date(a.data));
 
@@ -583,14 +583,15 @@ document.addEventListener('DOMContentLoaded', function() {
             html += `<table>
                 <thead><tr><th>Usuário</th><th>Título</th><th>Autor</th><th>Data</th><th>Status</th><th>Ações</th></tr></thead><tbody>`;
             solicitacoes.forEach(s => {
-                const nomeUsuario = mapaClientes[s.usuario_id] || 'Desconhecido';
+                const usuario = mapaClientes[s.usuario_id] || { nome: 'Desconhecido', apelido: '' };
+                const nomeUsuario = usuario.apelido || usuario.nome;
                 const data = new Date(s.data).toLocaleDateString('pt-BR');
                 const statusTexto = s.status === 'atendido' ? 'Atendido' : 'Pendente';
                 const statusClass = s.status === 'atendido' ? 'status-ativo' : '';
                 
                 html += `<tr>
                     <td>${nomeUsuario}</td>
-                    <td>${s.titulo}</td>
+                    <td style="cursor:pointer; color:var(--btn-primary); text-decoration:underline;" onclick="verDetalhesSolicitacao(${s.id})">${s.titulo}</td>
                     <td>${s.autor || '—'}</td>
                     <td>${data}</td>
                     <td class="${statusClass}">${statusTexto}</td>
@@ -605,11 +606,67 @@ document.addEventListener('DOMContentLoaded', function() {
         contentArea.innerHTML = html;
     }
 
-    // Função global para atender solicitação
+    // Função global para exibir detalhes da solicitação
+    window.verDetalhesSolicitacao = async function(id) {
+        const solicitacao = await db.solicitacoes.get(id);
+        if (!solicitacao) return;
+        
+        const clientes = await db.clientes.toArray();
+        const usuario = clientes.find(c => c.id === solicitacao.usuario_id) || {};
+        const nomeUsuario = usuario.apelido || usuario.nome || 'Desconhecido';
+        const fotoUrl = usuario.foto || 'static/src/avatares/usuario.jpg';
+        const data = new Date(solicitacao.data).toLocaleDateString('pt-BR');
+        const status = solicitacao.status === 'atendido' ? '✅ Atendido' : '⏳ Pendente';
+
+        // Cria modal
+        const existente = document.getElementById('modal-detalhes-solicitacao');
+        if (existente) existente.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'modal-detalhes-solicitacao';
+        modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:9999;';
+        modal.innerHTML = `
+            <div style="background:#fff; padding:24px; border-radius:8px; max-width:500px; width:90%; max-height:80vh; overflow-y:auto;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <h3 style="margin:0; color:var(--text-primary);">📖 Detalhes da Solicitação</h3>
+                    <button onclick="this.closest('#modal-detalhes-solicitacao').remove()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-secondary);">&times;</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                    <img src="${fotoUrl}" alt="${nomeUsuario}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;" onerror="this.src='static/src/avatares/usuario.jpg'">
+                    <div>
+                        <strong style="color:var(--text-primary);">${nomeUsuario}</strong>
+                        <br><small style="color:var(--text-secondary);">${data} • ${status}</small>
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <strong>Título:</strong> ${solicitacao.titulo}
+                </div>
+                ${solicitacao.autor ? `<div style="margin-bottom:12px;"><strong>Autor:</strong> ${solicitacao.autor}</div>` : ''}
+                ${solicitacao.editora ? `<div style="margin-bottom:12px;"><strong>Editora:</strong> ${solicitacao.editora}</div>` : ''}
+                ${solicitacao.comentario ? `
+                    <div style="background:#f8f9fa; padding:12px; border-radius:6px; margin-bottom:16px;">
+                        <strong>Comentário do usuário:</strong>
+                        <p style="margin:8px 0 0; color:#555; font-style:italic;">"${solicitacao.comentario}"</p>
+                    </div>
+                ` : ''}
+                ${solicitacao.status === 'pendente' ? `
+                    <button onclick="atenderSolicitacao(${solicitacao.id}); document.getElementById('modal-detalhes-solicitacao').remove();" style="background:#27ae60; color:#fff; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">✅ Atender Solicitação</button>
+                ` : ''}
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Fecha ao clicar fora
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) modal.remove();
+        });
+    };
+
+    // ===== FUNÇÃO GLOBAL PARA ATENDER SOLICITAÇÃO =====
     window.atenderSolicitacao = async function(id) {
         await db.solicitacoes.update(id, { status: 'atendido' });
         notificar('Solicitação marcada como atendida.');
-        renderSolicitacoes();
+        renderSolicitacoes(); // recarrega a lista
     };
 
     // ===== LOGOUT  =====
