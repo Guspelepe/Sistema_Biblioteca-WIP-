@@ -566,6 +566,52 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // 7. SOLICITAÇÕES DE LIVROS
+    async function renderSolicitacoes() {
+        await aguardarBanco();
+        const solicitacoes = await db.solicitacoes.toArray();
+        const clientes = await db.clientes.toArray();
+        const mapaClientes = {};
+        clientes.forEach(c => { mapaClientes[c.id] = c.nome; });
+
+        solicitacoes.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+        let html = `<div class="card"><h3>📩 Solicitações de Livros</h3>`;
+        if (solicitacoes.length === 0) {
+            html += `<p>Nenhuma solicitação enviada.</p>`;
+        } else {
+            html += `<table>
+                <thead><tr><th>Usuário</th><th>Título</th><th>Autor</th><th>Data</th><th>Status</th><th>Ações</th></tr></thead><tbody>`;
+            solicitacoes.forEach(s => {
+                const nomeUsuario = mapaClientes[s.usuario_id] || 'Desconhecido';
+                const data = new Date(s.data).toLocaleDateString('pt-BR');
+                const statusTexto = s.status === 'atendido' ? 'Atendido' : 'Pendente';
+                const statusClass = s.status === 'atendido' ? 'status-ativo' : '';
+                
+                html += `<tr>
+                    <td>${nomeUsuario}</td>
+                    <td>${s.titulo}</td>
+                    <td>${s.autor || '—'}</td>
+                    <td>${data}</td>
+                    <td class="${statusClass}">${statusTexto}</td>
+                    <td>
+                        ${s.status === 'pendente' ? `<button onclick="atenderSolicitacao(${s.id})" style="background:#27ae60; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem;">✅ Atender</button>` : '—'}
+                    </td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+        }
+        html += `</div>`;
+        contentArea.innerHTML = html;
+    }
+
+    // Função global para atender solicitação
+    window.atenderSolicitacao = async function(id) {
+        await db.solicitacoes.update(id, { status: 'atendido' });
+        notificar('Solicitação marcada como atendida.');
+        renderSolicitacoes();
+    };
+
     // ===== LOGOUT  =====
     logoutBtn.addEventListener('click', logout);
 
@@ -628,7 +674,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 'catalogo': 'Catálogo',
                 'adicionar-livros': 'Adicionar Livros',
                 'alugar': 'Alugar Livro',
-                'devolver': 'Devolver'
+                'devolver': 'Devolver',
+                'solicitacoes': 'Solicitações', 
             };
             sectionTitle.textContent = titles[section] || section;
 
@@ -642,6 +689,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 case 'adicionar-livros': renderAdicionarLivros(); break;
                 case 'alugar': renderAlugar(); break;
                 case 'devolver': renderDevolver(); break;
+                case 'solicitacoes': renderSolicitacoes(); break;
                 default: contentArea.innerHTML = '<p>Seção em desenvolvimento.</p>';
             }
         });

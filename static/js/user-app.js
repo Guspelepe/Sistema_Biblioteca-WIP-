@@ -508,17 +508,97 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ================================================================
-    // SEÇÃO: SOLICITAR LIVROS (placeholder)
+    // SOLICITAR LIVROS
     // ================================================================
     async function renderSolicitarLivros() {
-        contentUser.innerHTML = `
-        <div class="card-user" style="text-align:center; padding:40px;">
-            <h3>📩 Solicitar Livros</h3>
-            <p style="color:var(--text-secondary); font-size:1.1rem; margin-top:20px;">
-                Em breve você poderá solicitar novos livros para a biblioteca.
-            </p>
-            <p style="color:var(--text-secondary);">Esta funcionalidade está em desenvolvimento.</p>
-        </div>`;
+        await aguardarBanco();
+        
+        // Carrega solicitações do usuário
+        const minhasSolicitacoes = await db.solicitacoes.where('usuario_id').equals(usuarioId).toArray();
+        minhasSolicitacoes.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+        let html = `
+            <div class="card-user">
+                <h3>📩 Solicitar Livros</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 16px;">Sugira novos títulos para nossa biblioteca.</p>
+                
+                <form id="form-solicitar-livro" class="form-user" style="max-width: 100%;">
+                    <div class="full-width">
+                        <label for="solic-titulo">Título do livro *</label>
+                        <input type="text" id="solic-titulo" placeholder="Ex: O Nome do Vento" required>
+                    </div>
+                    <div>
+                        <label for="solic-autor">Autor</label>
+                        <input type="text" id="solic-autor" placeholder="Ex: Patrick Rothfuss">
+                    </div>
+                    <div>
+                        <label for="solic-editora">Editora (opcional)</label>
+                        <input type="text" id="solic-editora" placeholder="Ex: Arqueiro">
+                    </div>
+                    <div class="full-width">
+                        <label for="solic-comentario">Por que você recomenda?</label>
+                        <textarea id="solic-comentario" rows="2" placeholder="Conte-nos um pouco sobre o livro..."></textarea>
+                    </div>
+                    <div class="full-width">
+                        <button type="submit" class="btn-user">Enviar Solicitação</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        // Histórico de solicitações
+        html += `<div class="card-user"><h3>📋 Minhas Solicitações</h3>`;
+        if (minhasSolicitacoes.length === 0) {
+            html += `<p style="color: var(--text-secondary);">Você ainda não enviou nenhuma solicitação.</p>`;
+        } else {
+            html += `<div style="display: flex; flex-direction: column; gap: 12px;">`;
+            minhasSolicitacoes.forEach(s => {
+                const statusTexto = s.status === 'atendido' ? '✅ Atendido' : '⏳ Pendente';
+                const statusCor = s.status === 'atendido' ? '#27ae60' : '#f39c12';
+                html += `
+                    <div style="background: var(--bg-sidebar); padding: 12px 16px; border-radius: 8px; border-left: 3px solid ${statusCor};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                            <strong style="color: var(--text-primary);">${s.titulo}</strong>
+                            <span style="font-size: 0.8rem; color: ${statusCor}; font-weight: 600;">${statusTexto}</span>
+                        </div>
+                        ${s.autor ? `<p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px;">Autor: ${s.autor}</p>` : ''}
+                        ${s.comentario ? `<p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">"${s.comentario}"</p>` : ''}
+                        <small style="color: var(--text-secondary); font-size: 0.75rem;">Enviado em ${new Date(s.data).toLocaleDateString('pt-BR')}</small>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        }
+        html += `</div>`;
+
+        contentUser.innerHTML = html;
+
+        // Evento do formulário
+        document.getElementById('form-solicitar-livro').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const titulo = document.getElementById('solic-titulo').value.trim();
+            const autor = document.getElementById('solic-autor').value.trim();
+            const editora = document.getElementById('solic-editora').value.trim();
+            const comentario = document.getElementById('solic-comentario').value.trim();
+
+            if (!titulo) {
+                notificar('Informe ao menos o título do livro.', 'erro');
+                return;
+            }
+
+            await db.solicitacoes.add({
+                usuario_id: usuarioId,
+                titulo,
+                autor,
+                editora,
+                comentario,
+                data: new Date().toISOString(),
+                status: 'pendente'
+            });
+
+            notificar('Solicitação enviada com sucesso!');
+            renderSolicitarLivros(); // recarrega a seção
+        });
     }
 
     // ================================================================
