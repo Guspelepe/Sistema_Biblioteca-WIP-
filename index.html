@@ -14,7 +14,8 @@
     <div class="landing-container">
         <!-- Coluna da imagem (esquerda) -->
         <div class="col-imagem" id="col-imagem">
-            <img id="imagem-destaque" src="" alt="Leitor">
+            <!-- src removido para evitar requisições fantasmas; será injetado pelo landing.js -->
+            <img id="imagem-destaque" alt="Leitor ilustrativo da biblioteca">
             <div class="frase-container">
                 <p id="frase-destaque"></p>
             </div>
@@ -35,13 +36,13 @@
                         <label for="senha">Senha</label>
                         <div class="senha-wrapper">
                             <input type="password" id="senha" placeholder="Digite sua senha" required>
-                            <button type="button" class="btn-mostrar-senha" onclick="toggleSenha('senha', this)">👁️</button>
+                            <button type="button" class="btn-mostrar-senha" id="toggle-senha-login" aria-label="Mostrar ou ocultar senha">👁️</button>
                         </div>
                     </div>
                     <button type="submit" class="btn-entrar">Entrar</button>
                 </form>
 
-                <div id="erro" style="display: none;">Credenciais inválidas. Tente novamente.</div>
+                <div id="erro" style="display: none;" role="alert">Credenciais inválidas. Tente novamente.</div>
 
                 <button type="button" class="btn-registrar" id="btn-abrir-registro">Ainda não tem conta? Registre-se</button>
             </div>
@@ -60,7 +61,7 @@
                 <span class="dev-name">Douglas Becker</span>
             </div>
             <div class="footer-github">
-                <a href="https://github.com/ronaldokaras/sistema-biblioteca-grupo" target="_blank">
+                <a href="https://github.com/ronaldokaras/sistema-biblioteca-grupo" target="_blank" rel="noopener">
                     <span class="github-icon"></span> GitHub
                 </a>
                 <span class="footer-year">© 2026</span>
@@ -69,10 +70,10 @@
     </footer>
 
     <!-- ===== MODAL DE REGISTRO ===== -->
-    <div class="modal-overlay" id="modal-registro">
-        <div class="modal-content">
-            <button class="fechar" id="btn-fechar-registro">&times;</button>
-            <h2><span>Criar conta</span></h2>
+    <div class="modal-overlay" id="modal-registro" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-labelledby="titulo-registro">
+            <button class="fechar" id="btn-fechar-registro" aria-label="Fechar janela de registro">&times;</button>
+            <h2 id="titulo-registro"><span>Criar conta</span></h2>
             <p class="subtitulo-modal">Preencha os dados para se cadastrar</p>
 
             <form id="form-registro">
@@ -87,7 +88,8 @@
                 </div>
                 <div class="campo">
                     <label for="reg-cpf">CPF</label>
-                    <input type="text" id="reg-cpf" placeholder="000.000.000-00" required maxlength="14" oninput="mascararCPF(this)">
+                    <!-- Adicionado inputmode para abrir teclado numérico no celular -->
+                    <input type="text" id="reg-cpf" placeholder="000.000.000-00" required maxlength="14" inputmode="numeric">
                     <span id="msg-cpf" class="msg-validacao"></span>
                 </div>
                 <div class="campo">
@@ -97,8 +99,9 @@
                 <div class="campo">
                     <label for="reg-senha">Senha</label>
                     <div class="senha-wrapper">
-                        <input type="password" id="reg-senha" placeholder="Mínimo 4 caracteres" required>
-                        <button type="button" class="btn-mostrar-senha" onclick="toggleSenha('reg-senha', this)">👁️</button>
+                        <!-- Adicionado minlength para validação nativa do navegador -->
+                        <input type="password" id="reg-senha" placeholder="Mínimo 4 caracteres" required minlength="4">
+                        <button type="button" class="btn-mostrar-senha" id="toggle-senha-registro" aria-label="Mostrar ou ocultar senha">👁️</button>
                     </div>
                 </div>
                 <div class="campo">
@@ -106,11 +109,12 @@
                     <input type="url" id="reg-foto" placeholder="https://exemplo.com/foto.jpg">
                 </div>
                 <button type="submit" class="btn-primario">Registrar</button>
-                <div id="erro-registro" style="display: none;"></div>
+                <div id="erro-registro" style="display: none;" role="alert"></div>
             </form>
         </div>
     </div>
 
+    <!-- Scripts externos e locais -->
     <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.3/dist/dexie.js"></script>
     <script src="static/js/utils.js"></script>
     <script src="static/js/db.js"></script>
