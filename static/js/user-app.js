@@ -465,6 +465,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const nascVal  = document.getElementById('edit-nascimento').value;
                 const senhaVal = document.getElementById('edit-senha').value.trim();
 
+                // Trava de segurança: se o campo de senha não estiver vazio, deve ter 4+ caracteres
+                if (senhaVal !== '' && senhaVal.length < 4) {
+                    notificar('A nova senha deve ter no mínimo 4 caracteres.', 'erro');
+                    return;
+                }
+
                 // Validação da URL da foto
                 if (fotoVal && !validarURLImagem(fotoVal)) {
                     notificar('URL da foto inválida. Use um link com extensão .jpg, .png, .gif ou .webp.', 'erro');
