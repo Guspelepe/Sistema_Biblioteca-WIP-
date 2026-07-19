@@ -34,12 +34,60 @@ document.addEventListener('DOMContentLoaded', function() {
         sessionStorage.removeItem('usuario');
     }
 
+    // ===== FUNÇÃO AUXILIAR: MODAL DE MULTA =====
+    function exibirModalMulta(diasAtraso, multa) {
+        return new Promise((resolve) => {
+            // Remove qualquer modal anterior
+            const existente = document.getElementById('modal-multa');
+            if (existente) existente.remove();
+
+            const modal = document.createElement('div');
+            modal.id = 'modal-multa';
+            modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:9999;';
+            modal.innerHTML = `
+                <div style="background:#fff; padding:30px; border-radius:8px; max-width:450px; width:90%; text-align:center;">
+                    <h3 style="color:#e74c3c;">⚠️ Devolução com Atraso</h3>
+                    <p>Atraso de <strong>${diasAtraso} dia(s)</strong>.</p>
+                    <p>Multa: <strong>R$ ${multa.toFixed(2)}</strong></p>
+                    <button id="btn-pagar" style="margin:10px; padding:10px 20px; background:#27ae60; color:#fff; border:none; border-radius:5px; cursor:pointer;">Pagar</button>
+                    <button id="btn-cancelar" style="margin:10px; padding:10px 20px; background:#e74c3c; color:#fff; border:none; border-radius:5px; cursor:pointer;">Cancelar</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            document.getElementById('btn-cancelar').onclick = () => {
+                modal.remove();
+                resolve(false);
+            };
+
+            document.getElementById('btn-pagar').onclick = () => {
+                modal.querySelector('div').innerHTML = `
+                    <h3>👨‍💻 Desenvolvido por:</h3>
+                    <div style="text-align:left; margin:20px 0;">
+                        <p><a href="https://github.com/Guspelepe" target="_blank">@Guspelepe</a> - Gustavo Pelepe</p>
+                        <p><a href="https://github.com/ronaldokaras" target="_blank">@ronaldokaras</a> - Ronaldo Karas</p>
+                        <p><a href="https://github.com/douglasbecker404" target="_blank">@douglasbecker404</a> - Douglas Becker</p>
+                    </div>
+                    <button id="btn-confirmar-devolucao" style="margin:10px; padding:10px 20px; background:#3498db; color:#fff; border:none; border-radius:5px; cursor:pointer;">Confirmar Devolução</button>
+                    <button id="btn-voltar" style="margin:10px; padding:10px 20px; background:#95a5a6; color:#fff; border:none; border-radius:5px; cursor:pointer;">Voltar</button>
+                `;
+                document.getElementById('btn-confirmar-devolucao').onclick = () => {
+                    modal.remove();
+                    resolve(true);
+                };
+                document.getElementById('btn-voltar').onclick = () => {
+                    modal.remove();
+                    resolve(false);
+                };
+            };
+        });
+    }
+
     // ===== FUNÇÕES DE RENDERIZAÇÃO =====
     async function renderUsuarios() {
         await aguardarBanco();
         const clientes = await db.clientes.toArray();
         
-        // CORREÇÃO DEXIE: .where() correto para buscar status ativo
         const alugueisAtivos = await db.alugueis.where('status').equals('ativo').toArray();
         const mapaAluguel = {};
         alugueisAtivos.forEach(a => { mapaAluguel[a.cliente_id] = a.livro; });
@@ -102,7 +150,6 @@ document.addEventListener('DOMContentLoaded', function() {
         alugueis.sort((a, b) => new Date(b.data_locacao) - new Date(a.data_locacao));
         const recentes = alugueis.slice(0, 20);
 
-        // Função que interpreta qualquer formato de data (ISO ou dd/mm/aaaa)
         const parseData = (str) => {
             if (!str) return null;
             if (str.includes('-') && str.length === 10) {
@@ -141,7 +188,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const dataReal = parseData(a.data_devolucao_real);
                 const devReal = dataReal ? dataReal.toLocaleDateString('pt-BR') : '-';
 
-                // Calcula atraso dinamicamente se os campos não existirem no banco
                 let diasAtraso = a.dias_atraso;
                 let multa = a.multa;
                 if ((diasAtraso === undefined || diasAtraso === null) && dataPrevista && dataReal && dataReal > dataPrevista) {
@@ -236,14 +282,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // CORREÇÃO DEXIE: Multi-campos usando filter() para evitar quebra de sintaxe
             const aluguelAtivo = await db.alugueis.where('cliente_id').equals(clienteId).filter(a => a.status === 'ativo').first();
             if (aluguelAtivo) {
                 notificar('Cliente já possui um livro alugado.', 'erro');
                 return;
             }
 
-            // CORREÇÃO DEXIE: Multi-campos usando filter()
             const livroAlugado = await db.alugueis.where('livro').equals(livroTitulo).filter(a => a.status === 'ativo').first();
             if (livroAlugado) {
                 notificar('Este livro já está alugado.', 'erro');
@@ -254,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cliente_id: clienteId,
                 livro: livroTitulo,
                 data_locacao: dataLocacao,
-                data_devolucao_prevista: document.getElementById('data-devolucao-prevista').value,
+                data_devolucao_prevista: document.getElementById('data-devolucao-prevista-iso').value,
                 status: 'ativo'
             });
 
@@ -299,7 +343,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 selectLivro.innerHTML = '<option value="">Selecione um cliente primeiro</option>';
                 return;
             }
-            // CORREÇÃO DEXIE: query correta usando filter para achar aluguéis ativos do cliente
             const alugueisAtivos = await db.alugueis.where('cliente_id').equals(clienteId).filter(a => a.status === 'ativo').toArray();
             selectLivro.disabled = false;
             selectLivro.innerHTML = '<option value="">Selecione o livro...</option>';
@@ -325,12 +368,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            const hoje = new Date().toISOString().split('T')[0]; // yyyy-mm-dd
+            const hoje = new Date().toISOString().split('T')[0];
             let diasAtraso = 0;
             let multa = 0;
 
             if (aluguel.data_devolucao_prevista) {
-                // Converte ambas as datas para Date (compatível com formato ISO)
                 const prevista = new Date(aluguel.data_devolucao_prevista + 'T00:00:00');
                 const real = new Date(hoje + 'T00:00:00');
                 if (real > prevista) {
@@ -340,16 +382,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            const mensagem = diasAtraso > 0 
-                ? `Atenção: ${diasAtraso} dia(s) de atraso. Multa de R$ ${multa.toFixed(2)}. Confirmar devolução?`
-                : `Devolução dentro do prazo. Confirmar?`;
-
-            if (!confirm(mensagem)) return;
+            // NOVA LÓGICA: modal de multa quando há atraso
+            if (diasAtraso > 0) {
+                const confirmado = await exibirModalMulta(diasAtraso, multa);
+                if (!confirmado) {
+                    notificar('Devolução cancelada.', 'aviso');
+                    return;
+                }
+            } else {
+                if (!confirm('Devolução dentro do prazo. Confirmar?')) return;
+            }
 
             await db.alugueis.update(aluguelId, {
                 status: 'devolvido',
                 data_devolucao_real: hoje,
-                dias_atraso: diasAtraso,    // vamos armazenar para histórico
+                dias_atraso: diasAtraso,
                 multa: multa
             });
 
@@ -390,7 +437,6 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>`;
         contentArea.innerHTML = html;
 
-        // Verificação de CPF
         document.getElementById('cpf').addEventListener('blur', async function() {
             const cpfBruto = this.value.replace(/\D/g, '');
             const span = document.getElementById('msg-cpf-admin');
@@ -407,7 +453,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Verificação de apelido
         document.getElementById('apelido').addEventListener('blur', async function() {
             const apelido = this.value.trim();
             const span = document.getElementById('msg-apelido-admin');
@@ -421,7 +466,6 @@ document.addEventListener('DOMContentLoaded', function() {
             span.style.color = existente ? '#e74c3c' : '#27ae60';
         });
 
-        // Submit do formulário de cadastro
         document.getElementById('form-cadastro-usuario').addEventListener('submit', async (e) => {
             e.preventDefault();
             const nome = document.getElementById('nome').value.trim();
@@ -442,14 +486,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const cpfFormatado = cpfBruto.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
             
-            // Verifica duplicidade de CPF
             const cpfExistente = await db.clientes.where('cpf').equals(cpfFormatado).first();
             if (cpfExistente) {
                 notificar('CPF já cadastrado.', 'erro');
                 return;
             }
 
-            // Verifica duplicidade de apelido
             const apelidoExistente = await db.clientes.where('apelido').equalsIgnoreCase(apelido).first();
             if (apelidoExistente) {
                 notificar('Apelido já está em uso.', 'erro');
@@ -559,4 +601,4 @@ document.addEventListener('DOMContentLoaded', function() {
         loginModal.style.display = 'flex';
         contentArea.innerHTML = '<p>Faça login para acessar o sistema.</p>';
     }
-}); 
+});
