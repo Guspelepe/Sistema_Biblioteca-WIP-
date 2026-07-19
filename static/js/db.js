@@ -10,7 +10,7 @@ db.version(7).stores({
     clientes: '++id, cpf, nome, apelido, foto, livros_lidos, media_estrelas, lendo_agora, bio, nascimento',
     alugueis: '++id, cliente_id, status, livro, dias_atraso, multa',
     livros: '++id, titulo',
-    solicitacoes: '++id, usuario_id',
+    solicitacoes: '++id, usuario_id, titulo, autor, editora, comentario, data, status, resposta',
     avaliacoes: '++id, livro, usuario_id, nota, comentario, data',
     frases: '++id, texto, autor'
 });

@@ -1,5 +1,5 @@
 // ============================================================
-// user-app.js – Painel do usuário (Netflix-style)
+// user-app.js – Painel do usuário (SaaS-style, sem onclick inline)
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -38,17 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await aguardarBanco();
             usuarioAtual = await db.clientes.get(usuarioId);
-
             if (!usuarioAtual) {
                 alert('Usuário não encontrado.');
                 logout();
                 return;
             }
-
             userNome.textContent    = usuarioAtual.nome.split(' ')[0] || usuarioAtual.nome;
             userApelido.textContent = usuarioAtual.apelido || '';
             userAvatar.src          = usuarioAtual.foto || 'static/src/avatares/usuario.jpg';
-
             console.log('✅ Usuário carregado:', usuarioAtual.nome);
         } catch (err) {
             console.error('Erro ao carregar usuário:', err);
@@ -64,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
             await aguardarBanco();
             console.log('📌 Renderizando página inicial...');
 
-            // Sub-função para trocar abas (Top Livros / Novos Livros / Top Usuários)
             async function renderizarAba(tipo) {
                 const container = document.getElementById('grade-destaques');
                 if (!container) return;
@@ -72,11 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (tipo === 'top_usuarios') {
                     const clientes = await db.clientes.toArray();
-                    const top = clientes
-                        .filter(c => c.livros_lidos > 0)
-                        .sort((a, b) => (b.livros_lidos || 0) - (a.livros_lidos || 0))
-                        .slice(0, 5);
-
+                    const top = clientes.filter(c => c.livros_lidos > 0)
+                                       .sort((a, b) => (b.livros_lidos || 0) - (a.livros_lidos || 0))
+                                       .slice(0, 5);
                     if (top.length === 0) {
                         html = '<p style="color: var(--text-secondary);">Nenhum usuário com livros lidos ainda.</p>';
                     } else {
@@ -88,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             else if (pos === 2) { bg = '#C0C0C0'; color = '#000'; }
                             else if (pos === 3) { bg = '#CD7F32'; color = '#fff'; }
                             else { bg = '#E74C3C'; color = '#fff'; }
-
                             const foto = u.foto || 'static/src/avatares/usuario.jpg';
                             const apelido = u.apelido || u.nome;
                             html += `
@@ -110,7 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const ativos = await db.alugueis.where({ status: 'ativo' }).toArray();
                     const alugadosSet = new Set(ativos.map(a => a.livro.split(' - ')[0].trim().toLowerCase()));
                     const lista = livros.sort(() => 0.5 - Math.random()).slice(0, 5);
-
                     html = '<div class="grade-livros">';
                     lista.forEach(livro => {
                         const tituloSimples = livro.titulo.split(' - ')[0].trim().toLowerCase();
@@ -118,9 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         const statusClass = disponivel ? 'status-disponivel' : 'status-alugado';
                         const statusTexto = disponivel ? 'Disponível' : 'Alugado';
                         const capa = `static/src/${encodeURIComponent(livro.titulo)}.jpg`;
-
                         html += `
-                        <div class="livro-card" onclick="abrirLivro('${livro.titulo}')">
+                        <div class="livro-card" data-titulo="${livro.titulo}" style="cursor:pointer;">
                             <div class="capa">
                                 <img src="${capa}" alt="${livro.titulo}" onerror="this.style.display='none'; this.parentElement.querySelector('.placeholder').style.display='flex';">
                                 <div class="placeholder" style="display:none;">📚</div>
@@ -134,6 +125,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     html += '</div>';
                 }
                 container.innerHTML = html;
+
+                // Adiciona listeners para abrir detalhes (evita onclick inline)
+                container.querySelectorAll('.livro-card[data-titulo]').forEach(card => {
+                    card.addEventListener('click', () => abrirLivro(card.dataset.titulo));
+                });
             }
 
             // Monta layout da página inicial
@@ -197,7 +193,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="full-width"><label for="avaliacao-comentario-inicio">Comentário</label><textarea id="avaliacao-comentario-inicio" rows="3" placeholder="Sua opinião..."></textarea></div>
                 <div class="full-width"><button type="submit" class="btn-user">Enviar avaliação</button></div>
             </form>`;
-
             html += '</div>';
             contentUser.innerHTML = html;
 
@@ -221,12 +216,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const livro = document.getElementById('avaliacao-livro-inicio').value.trim();
                 const nota = parseInt(document.getElementById('avaliacao-nota-inicio').value);
                 const comentario = document.getElementById('avaliacao-comentario-inicio').value.trim();
-
                 if (!livro || !nota || nota < 1 || nota > 5) {
                     notificar('Preencha todos os campos corretamente.', 'erro');
                     return;
                 }
-
                 await db.avaliacoes.add({
                     livro,
                     usuario_id: usuarioId,
@@ -262,9 +255,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const statusClass = disponivel ? 'status-disponivel' : 'status-alugado';
                 const statusTexto = disponivel ? 'Disponível' : 'Alugado';
                 const capa = `static/src/${encodeURIComponent(livro.titulo)}.jpg`;
-
                 html += `
-                <div class="livro-card" onclick="abrirLivro('${livro.titulo}')">
+                <div class="livro-card" data-titulo="${livro.titulo}" style="cursor:pointer;">
                     <div class="capa">
                         <img src="${capa}" alt="${livro.titulo}" onerror="this.style.display='none'; this.parentElement.querySelector('.placeholder').style.display='flex';">
                         <div class="placeholder" style="display:none;">📚</div>
@@ -277,6 +269,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             html += '</div></div>';
             contentUser.innerHTML = html;
+
+            // Adiciona listeners para abrir detalhes
+            document.querySelectorAll('.livro-card[data-titulo]').forEach(card => {
+                card.addEventListener('click', () => abrirLivro(card.dataset.titulo));
+            });
         } catch (err) {
             console.error('Erro ao renderizar biblioteca:', err);
             contentUser.innerHTML = '<p>⚠️ Erro ao carregar a biblioteca.</p>';
@@ -290,7 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await aguardarBanco();
             const alugueis = await db.alugueis.where({ cliente_id: usuarioId }).toArray();
-
             if (alugueis.length === 0) {
                 contentUser.innerHTML = `<div class="card-user"><h3>📖 Meus Livros</h3><p>Você ainda não alugou nenhum livro.</p></div>`;
                 return;
@@ -328,22 +324,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 const atrasoStr = diasAtraso > 0 ? `${diasAtraso} dia(s)` : '—';
                 const multaStr  = multa > 0 ? `R$ ${multa.toFixed(2)}` : '—';
 
-                let acoes = '';
-                if (aluguel.status === 'ativo') {
-                    acoes = `
-                        <button class="btn-user" onclick="renovarAluguel(${aluguel.id})" style="padding:4px 12px; font-size:0.8rem;">🔄 Renovar</button>
-                        <button class="btn-user" onclick="devolverAluguel(${aluguel.id})" style="padding:4px 12px; font-size:0.8rem; background:#e74c3c;">📦 Devolver</button>`;
-                }
-
-                html += `<tr>
+                html += `<tr data-id="${aluguel.id}">
                     <td>${aluguel.livro}</td><td>${dataLoc}</td><td>${devPrev}</td><td>${devReal}</td>
                     <td class="${statusClass}">${status}</td><td>${atrasoStr}</td><td>${multaStr}</td>
-                    <td>${acoes || '-'}</td>
+                    <td class="acoes-cell"></td>
                 </tr>`;
             });
 
             html += '</tbody></table></div>';
             contentUser.innerHTML = html;
+
+            // Adiciona os botões de ação via JavaScript, sem onclick inline
+            document.querySelectorAll('tr[data-id]').forEach(row => {
+                const aluguelId = parseInt(row.dataset.id);
+                const acoesCell = row.querySelector('.acoes-cell');
+                if (acoesCell) {
+                    // Verifica status (precisa do objeto aluguel, mas podemos acessar o texto da coluna status)
+                    // Melhor: use o array alugueis original
+                    const aluguel = alugueis.find(a => a.id === aluguelId);
+                    if (aluguel && aluguel.status === 'ativo') {
+                        const btnRenovar = document.createElement('button');
+                        btnRenovar.className = 'btn-user';
+                        btnRenovar.textContent = '🔄 Renovar';
+                        btnRenovar.style.padding = '4px 12px';
+                        btnRenovar.style.fontSize = '0.8rem';
+                        btnRenovar.addEventListener('click', () => renovarAluguel(aluguelId));
+
+                        const btnDevolver = document.createElement('button');
+                        btnDevolver.className = 'btn-user';
+                        btnDevolver.textContent = '📦 Devolver';
+                        btnDevolver.style.padding = '4px 12px';
+                        btnDevolver.style.fontSize = '0.8rem';
+                        btnDevolver.style.background = '#e74c3c';
+                        btnDevolver.style.marginLeft = '4px';
+                        btnDevolver.addEventListener('click', () => devolverAluguel(aluguelId));
+
+                        acoesCell.appendChild(btnRenovar);
+                        acoesCell.appendChild(btnDevolver);
+                    } else {
+                        acoesCell.textContent = '-';
+                    }
+                }
+            });
+
         } catch (err) {
             console.error('Erro ao renderizar meus livros:', err);
             contentUser.innerHTML = '<p>⚠️ Erro ao carregar seus livros.</p>';
@@ -398,7 +421,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
             html += '</div>';
-
             contentUser.innerHTML = html;
         } catch (err) {
             console.error('Erro ao renderizar perfil:', err);
@@ -422,7 +444,6 @@ document.addEventListener('DOMContentLoaded', () => {
             let html = `
             <div class="card-user">
                 <h3>✏️ Editar Perfil</h3>
-
                 <h4 style="margin-top:20px; border-bottom:1px solid var(--border-color); padding-bottom:8px; color:var(--accent-color);">PERFIL</h4>
                 <div style="display:grid; grid-template-columns:1fr; gap:16px; margin-top:16px;">
                     <div>
@@ -442,7 +463,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         <input type="date" id="edit-nascimento" value="${nascimento}" style="width:100%; padding:10px 14px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-card); color:var(--text-primary);">
                     </div>
                 </div>
-
                 <h4 style="margin-top:30px; border-bottom:1px solid var(--border-color); padding-bottom:8px; color:var(--accent-color);">USUÁRIO</h4>
                 <div style="display:grid; grid-template-columns:1fr; gap:16px; margin-top:16px;">
                     <div>
@@ -451,10 +471,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <small style="color:var(--text-secondary);">Mínimo 4 caracteres</small>
                     </div>
                 </div>
-
-                <button type="submit" id="btn-salvar-perfil" class="btn-user" style="margin-top:30px; width:100%;">💾 Salvar alterações</button>
+                <button type="button" id="btn-salvar-perfil" class="btn-user" style="margin-top:30px; width:100%;">💾 Salvar alterações</button>
             </div>`;
-
             contentUser.innerHTML = html;
 
             document.getElementById('btn-salvar-perfil').addEventListener('click', async (e) => {
@@ -465,14 +483,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const nascVal  = document.getElementById('edit-nascimento').value;
                 const senhaVal = document.getElementById('edit-senha').value.trim();
 
-                // Trava de segurança: se o campo de senha não estiver vazio, deve ter 4+ caracteres
                 if (senhaVal !== '' && senhaVal.length < 4) {
                     notificar('A nova senha deve ter no mínimo 4 caracteres.', 'erro');
                     return;
                 }
-
-                // Validação da URL da foto
-                if (fotoVal && !validarURLImagem(fotoVal)) {
+                if (fotoVal && typeof validarURLImagem === 'function' && !validarURLImagem(fotoVal)) {
                     notificar('URL da foto inválida. Use um link com extensão .jpg, .png, .gif ou .webp.', 'erro');
                     return;
                 }
@@ -500,7 +515,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     notificar('Erro ao salvar alterações.', 'erro');
                 }
             });
-
         } catch (err) {
             console.error('Erro ao renderizar editar perfil:', err);
             contentUser.innerHTML = '<p>⚠️ Erro ao carregar edição de perfil.</p>';
@@ -511,51 +525,55 @@ document.addEventListener('DOMContentLoaded', () => {
     // SOLICITAR LIVROS
     // ================================================================
     async function renderSolicitarLivros() {
-        await aguardarBanco();
-        
-        // Carrega solicitações do usuário
-        const minhasSolicitacoes = await db.solicitacoes.where('usuario_id').equals(usuarioId).toArray();
-        minhasSolicitacoes.sort((a, b) => new Date(b.data) - new Date(a.data));
+        try {
+            await aguardarBanco();
 
-        let html = `
-            <div class="card-user">
-                <h3>📩 Solicitar Livros</h3>
-                <p style="color: var(--text-secondary); margin-bottom: 16px;">Sugira novos títulos para nossa biblioteca.</p>
-                
-                <form id="form-solicitar-livro" class="form-user" style="max-width: 100%;">
-                    <div class="full-width">
-                        <label for="solic-titulo">Título do livro *</label>
-                        <input type="text" id="solic-titulo" placeholder="Ex: O Nome do Vento" required>
-                    </div>
-                    <div>
-                        <label for="solic-autor">Autor</label>
-                        <input type="text" id="solic-autor" placeholder="Ex: Patrick Rothfuss">
-                    </div>
-                    <div>
-                        <label for="solic-editora">Editora (opcional)</label>
-                        <input type="text" id="solic-editora" placeholder="Ex: Arqueiro">
-                    </div>
-                    <div class="full-width">
-                        <label for="solic-comentario">Por que você recomenda?</label>
-                        <textarea id="solic-comentario" rows="2" placeholder="Conte-nos um pouco sobre o livro..."></textarea>
-                    </div>
-                    <div class="full-width">
-                        <button type="submit" class="btn-user">Enviar Solicitação</button>
-                    </div>
-                </form>
-            </div>
-        `;
+            // Verifica se a tabela solicitacoes existe (fallback)
+            if (!db.solicitacoes) {
+                contentUser.innerHTML = '<div class="card-user"><h3>📩 Solicitar Livros</h3><p>Recurso temporariamente indisponível.</p></div>';
+                return;
+            }
 
-        // Histórico de solicitações
-        html += `<div class="card-user"><h3>📋 Minhas Solicitações</h3>`;
-        if (minhasSolicitacoes.length === 0) {
-            html += `<p style="color: var(--text-secondary);">Você ainda não enviou nenhuma solicitação.</p>`;
-        } else {
-            html += `<div style="display: flex; flex-direction: column; gap: 12px;">`;
-            minhasSolicitacoes.forEach(s => {
-                const statusTexto = s.status === 'atendido' ? '✅ Atendido' : '⏳ Pendente';
-                const statusCor = s.status === 'atendido' ? '#27ae60' : '#f39c12';
-                html += `
+            const minhasSolicitacoes = await db.solicitacoes.where('usuario_id').equals(usuarioId).toArray();
+            minhasSolicitacoes.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+            let html = `
+                <div class="card-user">
+                    <h3>📩 Solicitar Livros</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 16px;">Sugira novos títulos para nossa biblioteca.</p>
+                    <form id="form-solicitar-livro" class="form-user" style="max-width: 100%;">
+                        <div class="full-width">
+                            <label for="solic-titulo">Título do livro *</label>
+                            <input type="text" id="solic-titulo" placeholder="Ex: O Nome do Vento" required>
+                        </div>
+                        <div>
+                            <label for="solic-autor">Autor</label>
+                            <input type="text" id="solic-autor" placeholder="Ex: Patrick Rothfuss">
+                        </div>
+                        <div>
+                            <label for="solic-editora">Editora (opcional)</label>
+                            <input type="text" id="solic-editora" placeholder="Ex: Arqueiro">
+                        </div>
+                        <div class="full-width">
+                            <label for="solic-comentario">Por que você recomenda?</label>
+                            <textarea id="solic-comentario" rows="2" placeholder="Conte-nos um pouco sobre o livro..."></textarea>
+                        </div>
+                        <div class="full-width">
+                            <button type="submit" class="btn-user">Enviar Solicitação</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            html += `<div class="card-user"><h3>📋 Minhas Solicitações</h3>`;
+            if (minhasSolicitacoes.length === 0) {
+                html += `<p style="color: var(--text-secondary);">Você ainda não enviou nenhuma solicitação.</p>`;
+            } else {
+                html += `<div style="display: flex; flex-direction: column; gap: 12px;">`;
+                minhasSolicitacoes.forEach(s => {
+                    const statusTexto = s.status === 'atendido' ? '✅ Atendido' : '⏳ Pendente';
+                    const statusCor = s.status === 'atendido' ? '#27ae60' : '#f39c12';
+                    html += `
                     <div style="background: var(--bg-sidebar); padding: 12px 16px; border-radius: 8px; border-left: 3px solid ${statusCor};">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                             <strong style="color: var(--text-primary);">${s.titulo}</strong>
@@ -571,44 +589,180 @@ document.addEventListener('DOMContentLoaded', () => {
                         ` : ''}
                         <small style="color: var(--text-secondary); font-size: 0.75rem;">Enviado em ${new Date(s.data).toLocaleDateString('pt-BR')}</small>
                     </div>
-                `;
-            });
-            html += `</div>`;
-        }
-        html += `</div>`;
-
-        contentUser.innerHTML = html;
-
-        // Evento do formulário
-        document.getElementById('form-solicitar-livro').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const titulo = document.getElementById('solic-titulo').value.trim();
-            const autor = document.getElementById('solic-autor').value.trim();
-            const editora = document.getElementById('solic-editora').value.trim();
-            const comentario = document.getElementById('solic-comentario').value.trim();
-
-            if (!titulo) {
-                notificar('Informe ao menos o título do livro.', 'erro');
-                return;
+                    `;
+                });
+                html += `</div>`;
             }
+            html += `</div>`;
 
-            await db.solicitacoes.add({
-                usuario_id: usuarioId,
-                titulo,
-                autor,
-                editora,
-                comentario,
-                data: new Date().toISOString(),
-                status: 'pendente'
+            contentUser.innerHTML = html;
+
+            document.getElementById('form-solicitar-livro').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const titulo = document.getElementById('solic-titulo').value.trim();
+                const autor = document.getElementById('solic-autor').value.trim();
+                const editora = document.getElementById('solic-editora').value.trim();
+                const comentario = document.getElementById('solic-comentario').value.trim();
+
+                if (!titulo) {
+                    notificar('Informe ao menos o título do livro.', 'erro');
+                    return;
+                }
+
+                await db.solicitacoes.add({
+                    usuario_id: usuarioId,
+                    titulo,
+                    autor,
+                    editora,
+                    comentario,
+                    data: new Date().toISOString(),
+                    status: 'pendente'
+                });
+
+                notificar('Solicitação enviada com sucesso!');
+                renderSolicitarLivros();
             });
-
-            notificar('Solicitação enviada com sucesso!');
-            renderSolicitarLivros(); // recarrega a seção
-        });
+        } catch (err) {
+            console.error('Erro ao renderizar solicitações:', err);
+            contentUser.innerHTML = '<p>⚠️ Erro ao carregar a seção de solicitações.</p>';
+        }
     }
 
     // ================================================================
-    // FUNÇÕES GLOBAIS (expostas ao window)
+    // ALUGAR LIVRO (USUÁRIO)
+    // ================================================================
+    async function renderAlugarUsuario() {
+        try {
+            await aguardarBanco();
+
+            // Verifica se o usuário já tem um livro alugado
+            const aluguelAtivoUsuario = await db.alugueis
+                .where('cliente_id').equals(usuarioId)
+                .filter(a => a.status === 'ativo')
+                .first();
+
+            if (aluguelAtivoUsuario) {
+                contentUser.innerHTML = `
+                    <div class="card-user" style="text-align:center; padding:40px;">
+                        <h3>📚 Alugar Livro</h3>
+                        <p style="color: var(--text-secondary); margin: 20px 0;">
+                            Você já possui o livro <strong>"${aluguelAtivoUsuario.livro}"</strong> alugado.
+                        </p>
+                        <p style="color: var(--text-secondary);">
+                            Devolva-o antes de alugar um novo título.
+                        </p>
+                        <button id="btn-ir-meus-livros" class="btn-user" style="margin-top:16px;">
+                            📖 Ir para Meus Livros
+                        </button>
+                    </div>
+                `;
+                document.getElementById('btn-ir-meus-livros').addEventListener('click', () => {
+                    // Navega para a seção "Meus Livros" via clique no menu
+                    const linkMeusLivros = document.querySelector('a[data-section="meus-livros"]');
+                    if (linkMeusLivros) linkMeusLivros.click();
+                    else renderMeusLivros();
+                });
+                return;
+            }
+
+            // Carrega todos os livros e filtra disponíveis
+            const livros = await db.livros.toArray();
+            const alugueisAtivos = await db.alugueis.where('status').equals('ativo').toArray();
+            const titulosAlugados = new Set(alugueisAtivos.map(a => a.livro));
+            const livrosDisponiveis = livros.filter(l => !titulosAlugados.has(l.titulo));
+
+            if (livrosDisponiveis.length === 0) {
+                contentUser.innerHTML = `
+                    <div class="card-user" style="text-align:center; padding:40px;">
+                        <h3>📚 Alugar Livro</h3>
+                        <p style="color: var(--text-secondary); margin-top:20px;">
+                            Nenhum livro disponível no momento.
+                        </p>
+                        <p style="color: var(--text-secondary);">
+                            Volte mais tarde ou solicite novos títulos.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <div class="card-user">
+                    <h3>📚 Alugar Livro</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                        Escolha um dos livros disponíveis e confirme o aluguel.
+                    </p>
+                    <form id="form-alugar-usuario" class="form-user" style="max-width: 100%;">
+                        <div class="full-width">
+                            <label for="livro-alugar-usuario">Livro disponível</label>
+                            <select id="livro-alugar-usuario" required style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-card); color:var(--text-primary);">
+                                <option value="">Selecione um livro...</option>
+            `;
+            livrosDisponiveis.forEach(l => {
+                html += `<option value="${l.titulo}">${l.titulo}</option>`;
+            });
+            html += `
+                            </select>
+                        </div>
+                        <div class="full-width">
+                            <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                                📅 Data de locação: <strong>${new Date().toLocaleDateString('pt-BR')}</strong><br>
+                                📅 Devolução prevista: <strong>${new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')}</strong> (7 dias)
+                            </p>
+                        </div>
+                        <div class="full-width">
+                            <button type="submit" class="btn-user">Confirmar Aluguel</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            contentUser.innerHTML = html;
+
+            document.getElementById('form-alugar-usuario').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const livroTitulo = document.getElementById('livro-alugar-usuario').value;
+                if (!livroTitulo) {
+                    notificar('Selecione um livro.', 'erro');
+                    return;
+                }
+
+                // Verifica novamente se o livro não foi alugado enquanto a página estava aberta
+                const livroJaAlugado = await db.alugueis
+                    .where('livro').equals(livroTitulo)
+                    .filter(a => a.status === 'ativo')
+                    .first();
+
+                if (livroJaAlugado) {
+                    notificar('Este livro acabou de ser alugado por outro usuário. Escolha outro.', 'erro');
+                    renderAlugarUsuario();
+                    return;
+                }
+
+                const hoje = new Date().toISOString().split('T')[0];
+                const devolucaoPrevista = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+                await db.alugueis.add({
+                    cliente_id: usuarioId,
+                    livro: livroTitulo,
+                    data_locacao: hoje,
+                    data_devolucao_prevista: devolucaoPrevista,
+                    status: 'ativo'
+                });
+
+                notificar(`Livro "${livroTitulo}" alugado com sucesso!`);
+                // Redireciona para Meus Livros
+                const linkMeusLivros = document.querySelector('a[data-section="meus-livros"]');
+                if (linkMeusLivros) linkMeusLivros.click();
+                else renderMeusLivros();
+            });
+        } catch (err) {
+            console.error('Erro ao renderizar aluguel:', err);
+            contentUser.innerHTML = '<p>⚠️ Erro ao carregar a seção de aluguel.</p>';
+        }
+    }
+
+    // ================================================================
+    // FUNÇÕES GLOBAIS (para serem chamadas de qualquer lugar)
     // ================================================================
     window.abrirLivro = (titulo) => {
         notificar(`📖 Detalhes de "${titulo}" em breve.`, 'info');
@@ -660,14 +814,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Fluxo de confirmação com modais (definidos em utils.js)
+            let confirmado = true;
             if (diasAtraso > 0) {
-                const confirmado = await exibirModalMulta(diasAtraso, multa);
+                if (typeof exibirModalMulta === 'function') {
+                    confirmado = await exibirModalMulta(diasAtraso, multa);
+                } else {
+                    confirmado = confirm(`Atraso de ${diasAtraso} dia(s). Multa de R$${multa.toFixed(2)}. Confirmar devolução?`);
+                }
                 if (!confirmado) {
                     notificar('Devolução cancelada.', 'erro');
                     return;
                 }
             } else {
-                const confirmado = await exibirModalDevolucaoNormal();
+                if (typeof exibirModalDevolucaoNormal === 'function') {
+                    confirmado = await exibirModalDevolucaoNormal();
+                } else {
+                    confirmado = confirm('Devolução dentro do prazo. Confirmar?');
+                }
                 if (!confirmado) return;
             }
 
@@ -688,7 +851,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------------
     // LOGOUT
     // ----------------------------------------------------------
-    logoutBtn.addEventListener('click', logout);
+    if (typeof logout === 'function') {
+        logoutBtn.addEventListener('click', logout);
+    } else {
+        logoutBtn.addEventListener('click', () => {
+            sessionStorage.clear();
+            window.location.href = 'index.html';
+        });
+    }
 
     // ================================================================
     // NAVEGAÇÃO ENTRE SEÇÕES
@@ -699,6 +869,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'perfil':            'Perfil',
         'editar-perfil':     'Editar Perfil',
         'biblioteca':        'Biblioteca',
+        'alugar-livro':      'Alugar Livro',
         'meus-livros':       'Meus Livros',
         'solicitar-livros':  'Solicitar Livros'
     };
@@ -717,6 +888,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'perfil':            renderPerfil(); break;
                 case 'editar-perfil':     renderEditarPerfil(); break;
                 case 'biblioteca':        renderBiblioteca(); break;
+                case 'alugar-livro':      renderAlugarUsuario(); break;
                 case 'meus-livros':       renderMeusLivros(); break;
                 case 'solicitar-livros':  renderSolicitarLivros(); break;
                 default: contentUser.innerHTML = '<p>Seção em desenvolvimento.</p>';
