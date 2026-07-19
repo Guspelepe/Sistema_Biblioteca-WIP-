@@ -411,7 +411,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
             } else {
-                if (!confirm('Devolução dentro do prazo. Confirmar?')) return;
+                const confirmado = await exibirModalDevolucaoNormal();
+                if (!confirmado) return;
             }
 
             await db.alugueis.update(aluguelId, {

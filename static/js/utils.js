@@ -108,38 +108,229 @@ function parseData(str) {
  */
 function exibirModalMulta(diasAtraso, multa) {
     return new Promise((resolve) => {
+        // Remove modal anterior se existir
         const existente = document.getElementById('modal-multa');
         if (existente) existente.remove();
 
+        // Cria o container do modal com fundo levemente borrado
         const modal = document.createElement('div');
         modal.id = 'modal-multa';
-        modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:9999;';
-        modal.innerHTML = `
-            <div style="background:#fff; padding:30px; border-radius:8px; max-width:450px; width:90%; text-align:center;">
-                <h3 style="color:#e74c3c;">⚠️ Devolução com Atraso</h3>
-                <p>Atraso de <strong>${diasAtraso} dia(s)</strong>.</p>
-                <p>Multa: <strong>R$ ${multa.toFixed(2)}</strong></p>
-                <button id="btn-pagar" style="margin:10px; padding:10px 20px; background:#27ae60; color:#fff; border:none; border-radius:5px; cursor:pointer;">Pagar</button>
-                <button id="btn-cancelar" style="margin:10px; padding:10px 20px; background:#e74c3c; color:#fff; border:none; border-radius:5px; cursor:pointer;">Cancelar</button>
+        modal.style.cssText = `
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(4px); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 9999;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        `;
+
+        // Função interna para renderizar a primeira tela (Aviso de Multa)
+        const renderizarTelaMulta = () => {
+            modal.innerHTML = `
+                <div style="background: #ffffff; padding: 32px; border-radius: 16px; max-width: 400px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); text-align: center;">
+                    <div style="background: #fef2f2; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                        <span style="font-size: 24px; color: #ef4444;">⚠️</span>
+                    </div>
+                    <h3 style="margin: 0 0 8px 0; color: #1e293b; font-size: 20px; font-weight: 700;">Devolução com Atraso</h3>
+                    <p style="margin: 0 0 24px 0; color: #64748b; font-size: 14px;">Identificamos pendências no prazo de entrega deste item.</p>
+                    
+                    <div style="background: #f8fafc; border-radius: 12px; padding: 16px; margin-bottom: 24px; text-align: left; border: 1px solid #e2e8f0;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; color: #475569;">
+                            <span>Tempo de atraso:</span>
+                            <span style="font-weight: 600; color: #1e293b;">${diasAtraso} dia(s)</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 14px; color: #475569; align-items: center;">
+                            <span>Valor da multa:</span>
+                            <span style="font-size: 18px; font-weight: 700; color: #ef4444;">R$ ${multa.toFixed(2)}</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px;">
+                        <button id="btn-cancelar" style="flex: 1; padding: 12px; background: #f1f5f9; color: #475569; border: none; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s;">Cancelar</button>
+                        <button id="btn-pagar" style="flex: 1; padding: 12px; background: #3b82f6; color: #ffffff; border: none; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s;">Pagar Multa</button>
+                    </div>
+                </div>
+            `;
+
+            // Eventos da primeira tela
+            document.getElementById('btn-cancelar').onclick = () => { modal.remove(); resolve(false); };
+            document.getElementById('btn-pagar').onclick = renderizarTelaCreditos;
+            
+            // Efeitos de Hover básicos via JS
+             configurarBotaoHover('btn-pagar', '#3b82f6', '#2563eb');
+             configurarBotaoHover('btn-cancelar', '#f1f5f9', '#e2e8f0');
+        };
+
+        // Função interna para renderizar a segunda tela (Créditos da Equipe)
+        const renderizarTelaCreditos = () => {
+            modal.innerHTML = `
+                <div style="background: #ffffff; padding: 32px; border-radius: 16px; max-width: 420px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); text-align: center;">
+                    <div style="background: #eff6ff; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                        <span style="font-size: 24px; color: #3b82f6;">👨‍💻</span>
+                    </div>
+                    <h3 style="margin: 0 0 4px 0; color: #1e293b; font-size: 20px; font-weight: 700;">Equipe de Desenvolvimento</h3>
+                    <p style="margin: 0 0 24px 0; color: #64748b; font-size: 14px;">Sistema desenvolvido com orgulho por:</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; text-align: left;">
+                        ${renderizarLinhaDev('Gustavo Pelepe', 'Guspelepe')}
+                        ${renderizarLinhaDev('Ronaldo Karas', 'ronaldokaras')}
+                        ${renderizarLinhaDev('Douglas Becker', 'douglasbecker404')}
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <button id="btn-confirmar-devolucao" style="width: 100%; padding: 12px; background: #10b981; color: #ffffff; border: none; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s;">Confirmar e Concluir Devolução</button>
+                        <button id="btn-voltar" style="width: 100%; padding: 10px; background: transparent; color: #64748b; border: 1px solid #e2e8f0; border-radius: 10px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s;">Voltar para o valor</button>
+                    </div>
+                </div>
+            `;
+
+            // Eventos da segunda tela
+            document.getElementById('btn-confirmar-devolucao').onclick = () => { modal.remove(); resolve(true); };
+            document.getElementById('btn-voltar').onclick = renderizarTelaMulta; // Agora ele volta de verdade para a tela anterior
+            
+             configurarBotaoHover('btn-confirmar-devolucao', '#10b981', '#059669');
+             configurarBotaoHover('btn-voltar', 'transparent', '#f8fafc');
+        };
+
+        // Helper para gerar as linhas dos desenvolvedores de forma elegante
+        const renderizarLinhaDev = (nome, github) => `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #f8fafc; border-radius: 10px; border: 1px solid #f1f5f9;">
+                <span style="font-weight: 500; color: #334155; font-size: 14px;">${nome}</span>
+                <a href="https://github.com/${github}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; color: #3b82f6; text-decoration: none; font-size: 13px; font-weight: 600;">
+                    @${github}
+                    <span style="font-size: 11px;">↗</span>
+                </a>
             </div>
         `;
-        document.body.appendChild(modal);
 
-        document.getElementById('btn-cancelar').onclick = () => { modal.remove(); resolve(false); };
-        document.getElementById('btn-pagar').onclick = () => {
-            modal.querySelector('div').innerHTML = `
-                <h3>👨‍💻 Desenvolvido por:</h3>
-                <div style="text-align:left; margin:20px 0;">
-                    <p><a href="https://github.com/Guspelepe" target="_blank">@Guspelepe</a> - Gustavo Pelepe</p>
-                    <p><a href="https://github.com/ronaldokaras" target="_blank">@ronaldokaras</a> - Ronaldo Karas</p>
-                    <p><a href="https://github.com/douglasbecker404" target="_blank">@douglasbecker404</a> - Douglas Becker</p>
-                </div>
-                <button id="btn-confirmar-devolucao" style="margin:10px; padding:10px 20px; background:#3498db; color:#fff; border:none; border-radius:5px; cursor:pointer;">Confirmar Devolução</button>
-                <button id="btn-voltar" style="margin:10px; padding:10px 20px; background:#95a5a6; color:#fff; border:none; border-radius:5px; cursor:pointer;">Voltar</button>
-            `;
-            document.getElementById('btn-confirmar-devolucao').onclick = () => { modal.remove(); resolve(true); };
-            document.getElementById('btn-voltar').onclick = () => { modal.remove(); resolve(false); };
+        // Helper simples para dar feedback visual ao passar o mouse nos botões
+        const configurarBotaoHover = (id, corBase, corHover) => {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+            btn.onmouseenter = () => btn.style.background = corHover;
+            btn.onmouseleave = () => btn.style.background = corBase;
         };
+
+        // Inicia exibindo a tela principal de multa
+        document.body.appendChild(modal);
+        renderizarTelaMulta();
+    });
+}
+
+/**
+ * Exibe modal de confirmação de devolução normal (Sem atraso / Sem multa).
+ * @returns {Promise<boolean>} true se confirmado, false se cancelado
+ */
+function exibirModalDevolucaoNormal() {
+    return new Promise((resolve) => {
+        // Remove modal anterior se existir para evitar duplicidade
+        const existente = document.getElementById('modal-devolucao-normal');
+        if (existente) existente.remove();
+
+        // Cria o container do modal com fundo borrado
+        const modal = document.createElement('div');
+        modal.id = 'modal-devolucao-normal';
+        modal.style.cssText = `
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(4px); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 9999;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        `;
+
+        // Função interna para renderizar a tela de confirmação
+        const renderizarTelaConfirmacao = () => {
+            modal.innerHTML = `
+                <div style="background: #ffffff; padding: 32px; border-radius: 16px; max-width: 400px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); text-align: center;">
+                    <div style="background: #ecfdf5; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                        <span style="font-size: 24px; color: #10b981;">✅</span>
+                    </div>
+                    <h3 style="margin: 0 0 8px 0; color: #1e293b; font-size: 20px; font-weight: 700;">Confirmar Devolução</h3>
+                    <p style="margin: 0 0 24px 0; color: #64748b; font-size: 14px;">O item está dentro do prazo regulamentar. Não há multas ou taxas adicionais a serem aplicadas.</p>
+                    
+                    <div style="background: #f8fafc; border-radius: 12px; padding: 16px; margin-bottom: 24px; text-align: left; border: 1px solid #e2e8f0;">
+                        <div style="display: flex; justify-content: space-between; font-size: 14px; color: #475569;">
+                            <span>Situação do prazo:</span>
+                            <span style="font-weight: 600; color: #10b981;">Regular / Em dia</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px;">
+                        <button id="btn-normal-cancelar" style="flex: 1; padding: 12px; background: #f1f5f9; color: #475569; border: none; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s;">Voltar</button>
+                        <button id="btn-normal-avancar" style="flex: 1; padding: 12px; background: #10b981; color: #ffffff; border: none; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s;">Avançar</button>
+                    </div>
+                </div>
+            `;
+
+            // Configura os cliques dos botões
+            document.getElementById('btn-normal-cancelar').onclick = () => { modal.remove(); resolve(false); };
+            document.getElementById('btn-normal-avancar').onclick = renderizarTelaCreditosNormal;
+            
+            // Efeitos de Hover
+            configurarHover('btn-normal-avancar', '#10b981', '#059669');
+            configurarHover('btn-normal-cancelar', '#f1f5f9', '#e2e8f0');
+        };
+
+        // Função interna para renderizar a tela de créditos antes de fechar de vez
+        const renderizarTelaCreditosNormal = () => {
+            modal.innerHTML = `
+                <div style="background: #ffffff; padding: 32px; border-radius: 16px; max-width: 420px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); text-align: center;">
+                    <div style="background: #eff6ff; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                        <span style="font-size: 24px; color: #3b82f6;">👨‍💻</span>
+                    </div>
+                    <h3 style="margin: 0 0 4px 0; color: #1e293b; font-size: 20px; font-weight: 700;">Equipe de Desenvolvimento</h3>
+                    <p style="margin: 0 0 24px 0; color: #64748b; font-size: 14px;">Sistema desenvolvido com orgulho por:</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; text-align: left;">
+                        ${renderizarLinhaDevNormal('Gustavo Pelepe', 'Guspelepe')}
+                        ${renderizarLinhaDevNormal('Ronaldo Karas', 'ronaldokaras')}
+                        ${renderizarLinhaDevNormal('Douglas Becker', 'douglasbecker404')}
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <button id="btn-finalizar-devolucao" style="width: 100%; padding: 12px; background: #3b82f6; color: #ffffff; border: none; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s;">Concluir Devolução</button>
+                        <button id="btn-normal-voltar" style="width: 100%; padding: 10px; background: transparent; color: #64748b; border: 1px solid #e2e8f0; border-radius: 10px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s;">Voltar</button>
+                    </div>
+                </div>
+            `;
+
+            // Configura os cliques dos botões da tela de créditos
+            document.getElementById('btn-finalizar-devolucao').onclick = () => { modal.remove(); resolve(true); };
+            document.getElementById('btn-normal-voltar').onclick = renderizarTelaConfirmacao;
+            
+            configurarHover('btn-finalizar-devolucao', '#3b82f6', '#2563eb');
+            configurarHover('btn-normal-voltar', 'transparent', '#f8fafc');
+        };
+
+        // Lista de desenvolvedores
+        const renderizarLinhaDevNormal = (nome, github) => `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #f8fafc; border-radius: 10px; border: 1px solid #f1f5f9;">
+                <span style="font-weight: 500; color: #334155; font-size: 14px;">${nome}</span>
+                <a href="https://github.com/${github}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; color: #3b82f6; text-decoration: none; font-size: 13px; font-weight: 600;">
+                    @${github}
+                    <span style="font-size: 11px;">↗</span>
+                </a>
+            </div>
+        `;
+
+        // Utilitário para o efeito hover
+        const configurarHover = (id, corBase, corHover) => {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+            btn.onmouseenter = () => btn.style.background = corHover;
+            btn.onmouseleave = () => btn.style.background = corBase;
+        };
+
+        // Insere e inicia na primeira tela
+        document.body.appendChild(modal);
+        renderizarTelaConfirmacao();
     });
 }
 
