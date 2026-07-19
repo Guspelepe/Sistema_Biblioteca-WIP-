@@ -5,6 +5,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('👤 User app iniciado.');
 
+    const MULTA_POR_DIA = 1.00; // valor em reais por dia de atraso
+
     // ===== VERIFICA LOGIN =====
     if (sessionStorage.getItem('perfil') !== 'usuario') {
         window.location.href = 'index.html';
@@ -22,6 +24,73 @@ document.addEventListener('DOMContentLoaded', function() {
     // Dados do usuário logado
     const usuarioId = parseInt(sessionStorage.getItem('usuarioId'));
     let usuarioAtual = null;
+
+    // ===== FUNÇÃO AUXILIAR: PARSE DE DATA =====
+    function parseData(str) {
+        if (!str) return null;
+        // Formato ISO yyyy-mm-dd
+        if (str.includes('-') && str.length === 10) {
+            const d = new Date(str + 'T00:00:00');
+            return isNaN(d) ? null : d;
+        }
+        // Formato brasileiro dd/mm/aaaa
+        if (str.includes('/')) {
+            const partes = str.split('/');
+            if (partes.length === 3) {
+                const d = new Date(partes[2], partes[1] - 1, partes[0]);
+                return isNaN(d) ? null : d;
+            }
+        }
+        return null;
+    }
+
+    // ===== FUNÇÃO AUXILIAR: MODAL DE MULTA =====
+    function exibirModalMulta(diasAtraso, multa) {
+        return new Promise((resolve) => {
+            const existente = document.getElementById('modal-multa');
+            if (existente) existente.remove();
+
+            const modal = document.createElement('div');
+            modal.id = 'modal-multa';
+            modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:9999;';
+            modal.innerHTML = `
+                <div style="background:#fff; padding:30px; border-radius:8px; max-width:450px; width:90%; text-align:center;">
+                    <h3 style="color:#e74c3c;">⚠️ Devolução com Atraso</h3>
+                    <p>Atraso de <strong>${diasAtraso} dia(s)</strong>.</p>
+                    <p>Multa: <strong>R$ ${multa.toFixed(2)}</strong></p>
+                    <button id="btn-pagar" style="margin:10px; padding:10px 20px; background:#27ae60; color:#fff; border:none; border-radius:5px; cursor:pointer;">Pagar</button>
+                    <button id="btn-cancelar" style="margin:10px; padding:10px 20px; background:#e74c3c; color:#fff; border:none; border-radius:5px; cursor:pointer;">Cancelar</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            document.getElementById('btn-cancelar').onclick = () => {
+                modal.remove();
+                resolve(false);
+            };
+
+            document.getElementById('btn-pagar').onclick = () => {
+                modal.querySelector('div').innerHTML = `
+                    <h3>👨‍💻 Desenvolvido por:</h3>
+                    <div style="text-align:left; margin:20px 0;">
+                        <p><a href="https://github.com/Guspelepe" target="_blank">@Guspelepe</a> - Gustavo Pelepe</p>
+                        <p><a href="https://github.com/ronaldokaras" target="_blank">@ronaldokaras</a> - Ronaldo Karas</p>
+                        <p><a href="https://github.com/douglasbecker404" target="_blank">@douglasbecker404</a> - Douglas Becker</p>
+                    </div>
+                    <button id="btn-confirmar-devolucao" style="margin:10px; padding:10px 20px; background:#3498db; color:#fff; border:none; border-radius:5px; cursor:pointer;">Confirmar Devolução</button>
+                    <button id="btn-voltar" style="margin:10px; padding:10px 20px; background:#95a5a6; color:#fff; border:none; border-radius:5px; cursor:pointer;">Voltar</button>
+                `;
+                document.getElementById('btn-confirmar-devolucao').onclick = () => {
+                    modal.remove();
+                    resolve(true);
+                };
+                document.getElementById('btn-voltar').onclick = () => {
+                    modal.remove();
+                    resolve(false);
+                };
+            };
+        });
+    }
 
     // ===== CARREGA USUÁRIO =====
     async function carregarUsuario() {
@@ -154,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 3. Meus Livros
+    // 3. Meus Livros (ATUALIZADO COM NOVAS COLUNAS)
     async function renderMeusLivros() {
         try {
             await aguardarBanco();
@@ -165,31 +234,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            // Cabeçalho atualizado com Devolução Real, Atraso e Multa
             let html = `<div class="card-user"><h3>📖 Meus Livros</h3><table class="tabela-user">
-                <thead><tr><th>Livro</th><th>Data Locação</th><th>Prev. Devolução</th><th>Status</th><th>Ação</th></tr></thead><tbody>`;
+                <thead><tr><th>Livro</th><th>Data Locação</th><th>Prev. Devolução</th><th>Devolução Real</th><th>Status</th><th>Atraso</th><th>Multa</th><th>Ação</th></tr></thead><tbody>`;
+
             alugueis.forEach(aluguel => {
                 const status = aluguel.status === 'ativo' ? 'Ativo' : 'Devolvido';
                 const statusClass = aluguel.status === 'ativo' ? 'status-disponivel' : 'status-alugado';
+
                 const dataLoc = aluguel.data_locacao.split('-').reverse().join('/');
-                let devPrev = '-';
-                if (aluguel.data_devolucao_prevista) {
-                    let dataObj;
-                    const strData = aluguel.data_devolucao_prevista;
-                    if (strData.includes('/')) {
-                        // formato antigo dd/mm/aaaa
-                        const partes = strData.split('/');
-                        if (partes.length === 3) {
-                            dataObj = new Date(partes[2], partes[1] - 1, partes[0]);
-                        }
-                    } else if (strData.includes('-')) {
-                        // formato ISO yyyy-mm-dd
-                        dataObj = new Date(strData + 'T00:00:00');
-                    }
-                    if (dataObj && !isNaN(dataObj)) {
-                        devPrev = dataObj.toLocaleDateString('pt-BR');
-                    }
+                const dataPrevista = parseData(aluguel.data_devolucao_prevista);
+                const devPrev = dataPrevista ? dataPrevista.toLocaleDateString('pt-BR') : '-';
+                const dataReal = parseData(aluguel.data_devolucao_real);
+                const devReal = dataReal ? dataReal.toLocaleDateString('pt-BR') : '-';
+
+                // Calcula atraso e multa dinamicamente
+                let diasAtraso = aluguel.dias_atraso;
+                let multa = aluguel.multa;
+                if ((diasAtraso === undefined || diasAtraso === null) && aluguel.status === 'devolvido' && dataPrevista && dataReal && dataReal > dataPrevista) {
+                    const diffMs = dataReal - dataPrevista;
+                    diasAtraso = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                    multa = diasAtraso * MULTA_POR_DIA;
+                } else {
+                    diasAtraso = diasAtraso || 0;
+                    multa = multa || 0;
                 }
-                const devReal = aluguel.data_devolucao_real ? aluguel.data_devolucao_real.split('-').reverse().join('/') : '-';
+
+                const atrasoExibicao = diasAtraso > 0 ? `${diasAtraso} dia(s)` : '—';
+                const multaExibicao = multa > 0 ? `R$ ${multa.toFixed(2)}` : '—';
 
                 let acoes = '';
                 if (aluguel.status === 'ativo') {
@@ -203,10 +275,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>${aluguel.livro}</td>
                     <td>${dataLoc}</td>
                     <td>${devPrev}</td>
+                    <td>${devReal}</td>
                     <td class="${statusClass}">${status}</td>
+                    <td>${atrasoExibicao}</td>
+                    <td>${multaExibicao}</td>
                     <td>${acoes || '-'}</td>
                 </tr>`;
             });
+
             html += `</tbody></table></div>`;
             contentUser.innerHTML = html;
             console.log('✅ Meus livros renderizados.');
@@ -216,14 +292,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ===== 4. PERFIL (completo com bio, nascimento, lendo_agora) =====
+    // 4. Perfil
     async function renderPerfil() {
         try {
             await aguardarBanco();
             if (!usuarioAtual) await carregarUsuario();
             console.log('👤 Renderizando perfil...');
 
-            // Garantir que campos existam (caso não estejam no banco)
             const bio = usuarioAtual.bio || '';
             const nascimento = usuarioAtual.nascimento || '';
             const lendoAgora = usuarioAtual.lendo_agora || '';
@@ -267,9 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
             contentUser.innerHTML = html;
-            console.log('✅ Perfil renderizado.');
 
-            // ===== EVENTO DE SUBMISSÃO =====
             document.getElementById('form-perfil').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const nome = document.getElementById('perfil-nome').value.trim();
@@ -304,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 userApelido.textContent = apelido;
                 if (foto) userAvatar.src = foto;
                 notificar('Perfil atualizado com sucesso!');
-                renderPerfil(); // recarrega
+                renderPerfil();
             });
 
         } catch (err) {
@@ -345,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     html += `
                         <div style="background: var(--bg-sidebar); padding: 16px; border-radius: 8px; border-left: 4px solid var(--accent-color); display: flex; align-items: center; gap: 16px;">
                             <div style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 2px solid var(--accent-color);">
-                                <img src="${fotoUrl}" alt="${nomeExibicao}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiNlZWUiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjQwIiByPSIxNSIgZmlsbD0iI2NjYyIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iODUiIHI9IjMwIiBmaaWxsPSIjY2NjIi8+PC9zdmc+'">
+                                <img src="${fotoUrl}" alt="${nomeExibicao}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiNlZWUiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjQwIiByPSIxNSIgZmlsbD0iI2NjYyIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iODUiIHI9IjMwIiBmaWxsPSIjY2NjIi8+PC9zdmc+'">
                             </div>
                             <div style="flex:1;">
                                 <p><strong>${av.livro}</strong> - ⭐ ${av.nota}/5</p>
@@ -358,7 +431,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 html += `</div>`;
             }
 
-            // Formulário para nova avaliação
             html += `
                 <hr style="border-color: var(--border-color); margin: 24px 0;">
                 <h4>Deixe sua avaliação</h4>
@@ -458,7 +530,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.devolverAluguel = async function(aluguelId) {
-        if (!confirm('Confirmar devolução?')) return;
+        if (!confirm('Deseja realmente devolver este livro?')) return;
         try {
             await aguardarBanco();
             const aluguel = await db.alugueis.get(aluguelId);
@@ -466,11 +538,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 notificar('Este aluguel não está ativo.', 'erro');
                 return;
             }
+
+            const hoje = new Date().toISOString().split('T')[0];
+            let diasAtraso = 0;
+            let multa = 0;
+
+            if (aluguel.data_devolucao_prevista) {
+                const prevista = parseData(aluguel.data_devolucao_prevista);
+                const real = new Date(hoje + 'T00:00:00');
+                if (prevista && real > prevista) {
+                    const diffMs = real - prevista;
+                    diasAtraso = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                    multa = diasAtraso * MULTA_POR_DIA;
+                }
+            }
+
+            // Se houver atraso, mostra modal de multa
+            if (diasAtraso > 0) {
+                const confirmado = await exibirModalMulta(diasAtraso, multa);
+                if (!confirmado) {
+                    notificar('Devolução cancelada.', 'erro');
+                    return;
+                }
+            }
+
             await db.alugueis.update(aluguelId, {
                 status: 'devolvido',
-                data_devolucao_real: new Date().toISOString().split('T')[0]
+                data_devolucao_real: hoje,
+                dias_atraso: diasAtraso,
+                multa: multa
             });
-            notificar(`Livro "${aluguel.livro}" devolvido com sucesso!`);
+            notificar(`Livro "${aluguel.livro}" devolvido com sucesso! Multa: R$ ${multa.toFixed(2)}.`);
             renderMeusLivros();
         } catch (err) {
             console.error('Erro ao devolver:', err);
