@@ -764,8 +764,118 @@ document.addEventListener('DOMContentLoaded', () => {
     // ================================================================
     // FUNÇÕES GLOBAIS (para serem chamadas de qualquer lugar)
     // ================================================================
-    window.abrirLivro = (titulo) => {
-        notificar(`📖 Detalhes de "${titulo}" em breve.`, 'info');
+        // ================================================================
+    // FUNÇÃO PARA ABRIR DETALHES DO LIVRO (MODAL)
+    // ================================================================
+    window.abrirLivro = async (titulo) => {
+        try {
+            await aguardarBanco();
+            // Busca o livro pelo título exato
+            const livro = await db.livros.where('titulo').equals(titulo).first();
+            if (!livro) {
+                notificar('Livro não encontrado.', 'erro');
+                return;
+            }
+
+            // Remove modal anterior se existir
+            const existente = document.getElementById('modal-detalhes-livro');
+            if (existente) existente.remove();
+
+            // Cria o modal
+            const modal = document.createElement('div');
+            modal.id = 'modal-detalhes-livro';
+            modal.style.cssText = `
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.7);
+                backdrop-filter: blur(6px);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                padding: 20px;
+                animation: fadeIn 0.3s ease;
+            `;
+
+            // Capa do livro (se existir)
+            const capaUrl = `static/src/${encodeURIComponent(livro.titulo)}.jpg`;
+
+            // Monta o conteúdo do modal
+            modal.innerHTML = `
+                <div style="
+                    background: var(--bg-card, #16213e);
+                    color: var(--text-primary, #fff);
+                    border-radius: 16px;
+                    max-width: 600px;
+                    width: 100%;
+                    max-height: 90vh;
+                    overflow-y: auto;
+                    padding: 28px 32px;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+                    border: 1px solid var(--border-color, #2a2a3a);
+                    position: relative;
+                ">
+                    <button onclick="this.closest('#modal-detalhes-livro').remove()" style="
+                        position: absolute;
+                        top: 12px;
+                        right: 16px;
+                        background: none;
+                        border: none;
+                        font-size: 28px;
+                        cursor: pointer;
+                        color: var(--text-secondary, #b0b0b0);
+                        transition: color 0.2s;
+                    ">&times;</button>
+
+                    <div style="display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start;">
+                        <div style="flex: 0 0 160px; max-width: 160px;">
+                            <img src="${capaUrl}" alt="${livro.titulo}" style="
+                                width: 100%;
+                                height: auto;
+                                border-radius: 8px;
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                                display: block;
+                            " onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\\'text-align:center; padding:40px 0; color:var(--text-secondary);\\'>📚 Capa não disponível</div>'">
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <h2 style="margin: 0 0 8px 0; font-size: 1.6rem; color: var(--text-primary, #fff);">${livro.titulo}</h2>
+                            <p style="margin: 0 0 4px 0; color: var(--text-secondary, #b0b0b0); font-size: 1rem;"><strong>Autor:</strong> ${livro.autor}</p>
+                            <p style="margin: 0 0 4px 0; color: var(--text-secondary, #b0b0b0); font-size: 1rem;"><strong>Editora:</strong> ${livro.editora} (${livro.ano})</p>
+                            <p style="margin: 0 0 4px 0; color: var(--text-secondary, #b0b0b0); font-size: 1rem;"><strong>Gênero:</strong> ${livro.genero || 'Não informado'}</p>
+                            <p style="margin: 0 0 4px 0; color: var(--text-secondary, #b0b0b0); font-size: 1rem;"><strong>Classificação:</strong> ${livro.classificacao || 'Livre'}</p>
+                            <hr style="border-color: var(--border-color, #2a2a3a); margin: 12px 0;">
+                            <p style="margin: 0; color: var(--text-primary, #fff); font-size: 0.95rem; line-height: 1.6;">
+                                <strong>Sinopse:</strong><br>${livro.sinopse || 'Sinopse não disponível.'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Fecha o modal ao clicar fora do conteúdo
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
+
+            // Adiciona a animação de fade (caso não exista no CSS)
+            if (!document.getElementById('style-modal-fade')) {
+                const style = document.createElement('style');
+                style.id = 'style-modal-fade';
+                style.textContent = `
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: scale(0.95); }
+                        to { opacity: 1; transform: scale(1); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+        } catch (err) {
+            console.error('Erro ao abrir detalhes do livro:', err);
+            notificar('Erro ao carregar detalhes do livro.', 'erro');
+        }
     };
 
     window.renovarAluguel = async (aluguelId) => {
