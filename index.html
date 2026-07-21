@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biblioteca - Acesso</title>
+    <title>Booksly - Acesso</title>
     <!-- Fonte Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +14,6 @@
     <div class="landing-container">
         <!-- Coluna da imagem (esquerda) -->
         <div class="col-imagem" id="col-imagem">
-            <!-- src removido para evitar requisições fantasmas; será injetado pelo landing.js -->
             <img id="imagem-destaque" alt="Leitor ilustrativo da biblioteca">
             <div class="frase-container">
                 <p id="frase-destaque"></p>
@@ -23,6 +22,9 @@
 
         <!-- Coluna do formulário (direita) -->
         <div class="col-form">
+            <!-- LOGO (acima do card) -->
+            <img src="static/src/avatares/logo.png" alt="Booksly" class="logo-login">
+
             <div class="card">
                 <h1><span>Login</span></h1>
                 <p class="subtitulo">Digite suas credenciais para acessar</p>
@@ -88,7 +90,6 @@
                 </div>
                 <div class="campo">
                     <label for="reg-cpf">CPF</label>
-                    <!-- Adicionado inputmode para abrir teclado numérico no celular -->
                     <input type="text" id="reg-cpf" placeholder="000.000.000-00" required maxlength="14" inputmode="numeric">
                     <span id="msg-cpf" class="msg-validacao"></span>
                 </div>
@@ -99,7 +100,6 @@
                 <div class="campo">
                     <label for="reg-senha">Senha</label>
                     <div class="senha-wrapper">
-                        <!-- Adicionado minlength para validação nativa do navegador -->
                         <input type="password" id="reg-senha" placeholder="Mínimo 4 caracteres" required minlength="4">
                         <button type="button" class="btn-mostrar-senha" id="toggle-senha-registro" aria-label="Mostrar ou ocultar senha">👁️</button>
                     </div>

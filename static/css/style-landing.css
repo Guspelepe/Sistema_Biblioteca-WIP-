@@ -69,14 +69,29 @@ body {
     pointer-events: none;
 }
 
-/* Coluna do formulário */
+/* ========================================
+   COLUNA DO FORMULÁRIO (com logo)
+   ======================================== */
 .col-form {
     flex: 1;
     display: flex;
-    justify-content: center;
+    flex-direction: column;    /* empilha logo e card */
+    justify-content: center;   /* centraliza verticalmente */
     align-items: center;
     background: var(--cor-fundo);
     padding: 20px;
+    margin-top: -50px;
+}
+
+/* Logo acima da caixa de login */
+.logo-login {
+    display: block;
+    width: 100%;
+    max-width: 600px;          /* ajuste o tamanho aqui */
+    height: auto;
+    margin: 0 auto -50px;
+    object-fit: contain;
+    margin-top: -100px;   /* ← ADICIONE ESTA LINHA */
 }
 
 /* ========================================
@@ -395,6 +410,9 @@ form {
     .modal-content {
         width: 95%;
         padding: 28px 20px;
+    }
+    .logo-login {
+        max-width: 100px;
     }
 }
 

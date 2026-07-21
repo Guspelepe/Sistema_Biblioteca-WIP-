@@ -43,7 +43,7 @@ body {
 }
 
 .user-header {
-    padding: 24px 20px;
+    padding: 0 20px 20px;     /* sem padding superior */
     text-align: center;
     border-bottom: 1px solid var(--border-color);
 }
@@ -643,4 +643,46 @@ body {
         display: block;
         width: 100%;
     }
+}
+
+/* ========================================
+   LOGO NA SIDEBAR (acima do avatar)
+   ======================================== */
+.logo-sidebar {
+    margin-bottom: 12px;
+}
+
+.logo-sidebar img {
+    display: block;
+    width: 200px;        /* ajuste conforme o tamanho desejado */
+    height: auto;
+    margin: 0;
+    padding: 0;
+    filter: brightness(0) invert(1); /* deixa a logo branca (se for escura) */
+    /* Se sua logo já for clara, remova o filter ou ajuste */
+}
+
+/* ========================================
+   RODAPÉ DA SIDEBAR (link do GitHub)
+   ======================================== */
+.sidebar-footer {
+    padding: 16px 20px 20px;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    margin-top: auto;   /* empurra para o final da sidebar */
+}
+
+.github-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: color 0.3s, transform 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.github-link:hover {
+    color: var(--accent-color);
+    transform: translateY(-2px);
 }
