@@ -55,26 +55,29 @@ document.addEventListener('DOMContentLoaded', function() {
             html += `<p>Nenhum usuário cadastrado.</p>`;
         } else {
             html += `<table>
-                <thead><tr><th>Foto</th><th>Nome</th><th>Apelido</th><th>CPF</th><th>Livros Lidos</th><th>Média</th><th>Lendo Agora</th><th>Livro Alugado</th><th>Ações</th></tr></thead><tbody>`;
+                <thead>
+                    <tr>
+                        <th>Foto</th>
+                        <th>Nome</th>
+                        <th>Apelido</th>
+                        <th>CPF</th>
+                        <th>Livro Alugado</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>`;
             clientes.forEach(c => {
                 const livro = mapaAluguel[c.id] || '—';
                 const fotoHtml = c.foto ? `<img src="${c.foto}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">` : '—';
-                const media = c.media_estrelas ? c.media_estrelas.toFixed(1) : '—';
-                const lendo = c.lendo_agora || '—';
-                const livrosLidos = c.livros_lidos || '—';
-                const apelido = c.apelido || '—';
                 html += `<tr>
                     <td>${fotoHtml}</td>
                     <td>${c.nome}</td>
-                    <td>${apelido}</td>
+                    <td>${c.apelido || '—'}</td>
                     <td>${c.cpf}</td>
-                    <td>${livrosLidos}</td>
-                    <td>${media}</td>
-                    <td>${lendo}</td>
                     <td>${livro !== '—' ? `<span class="status-ativo">${livro}</span>` : '—'}</td>
                     <td>
-                        <button onclick="resetarSenha(${c.id}, '${c.nome.replace(/'/g, "\\'")}')" style="background:#f39c12; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem;">🔑 Senha</button>
-                        <button onclick="excluirUsuario(${c.id}, '${c.nome.replace(/'/g, "\\'")}')" style="background:#e74c3c; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem; margin-left:4px;">🗑️ Excluir</button>
+                        <button onclick="resetarSenha(${c.id}, '${c.nome.replace(/'/g, "\\'")}')" style="background:#f39c12; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem;">Senha</button>
+                        <button onclick="excluirUsuario(${c.id}, '${c.nome.replace(/'/g, "\\'")}')" style="background:#e74c3c; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem; margin-left:4px;">Excluir</button>
                     </td>
                 </tr>`;
             });
@@ -83,7 +86,6 @@ document.addEventListener('DOMContentLoaded', function() {
         html += `</div>`;
         contentArea.innerHTML = html;
 
-        // Evento do botão "Novo Usuário"
         document.getElementById('btn-novo-usuario').addEventListener('click', renderCadastroUsuario);
     }
 

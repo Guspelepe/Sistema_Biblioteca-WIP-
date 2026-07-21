@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Biblioteca</title>
     <link rel="stylesheet" href="static/css/style-admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
 </head>
 <body>
     <!-- MODAL DE LOGIN DO BIBLIOTECÁRIO -->
@@ -29,7 +30,7 @@
     <div class="admin-container">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2>Biblioteca</h2>
+                <h2>BOOKSY  </h2>
                 <span class="user-name" id="admin-nome">Desconectado</span>
             </div>
             <div style="padding: 10px 20px; border-bottom: 1px solid var(--border-color);">
@@ -49,13 +50,24 @@
             </nav>
         </aside>
 
+        <!-- CONTEÚDO PRINCIPAL -->
         <main class="main-content">
             <header class="topbar">
-                <h1 id="section-title">Usuários</h1>
-                <div class="topbar-actions"></div>
+                <div class="topbar-left">
+                    <!-- LOGO BOOKSLY -->
+                    <div class="logo-topbar-admin">
+                        <img src="static/src/avatares/logo.png" alt="Booksly">
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <h1 id="section-title">Usuários</h1>
+                </div>
+                <div class="topbar-actions">
+                    <!-- espaço para futuros botões -->
+                </div>
             </header>
             <div class="content-area" id="content-area">
-                <p>Faça login para acessar o sistema.</p>
+                <!-- O conteúdo será renderizado pelo JS -->
             </div>
         </main>
     </div>
