@@ -54,6 +54,124 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ================================================================
+    // FUNÇÃO AUXILIAR PARA GERAR CARD DE LIVRO
+    // ================================================================
+    function gerarCardLivro(livro, disponivel) {
+        const statusClass = disponivel ? 'status-disponivel' : 'status-alugado';
+        const statusTexto = disponivel ? 'Disponível' : 'Alugado';
+        const capa = `static/src/${encodeURIComponent(livro.titulo)}.jpg`;
+        return `
+        <div class="livro-card" data-titulo="${livro.titulo}" style="cursor:pointer;">
+            <div class="capa">
+                <img src="${capa}" alt="${livro.titulo}" onerror="this.style.display='none'; this.parentElement.querySelector('.placeholder').style.display='flex';">
+                <div class="placeholder" style="display:none;">📚</div>
+            </div>
+            <div class="info">
+                <h4>${livro.titulo}</h4>
+                <span class="status ${statusClass}">${statusTexto}</span>
+            </div>
+        </div>`;
+    }
+
+    // ================================================================
+    // FUNÇÃO RENDERIZAR ABA (agora global)
+    // ================================================================
+    async function renderizarAba(tipo) {
+        const container = document.getElementById('grade-destaques');
+        if (!container) return;
+        let html = '';
+
+        if (tipo === 'top_usuarios') {
+            const clientes = await db.clientes.toArray();
+            const top = clientes
+                .filter(c => c.livros_lidos > 0)
+                .sort((a, b) => (b.livros_lidos || 0) - (a.livros_lidos || 0))
+                .slice(0, 5);
+
+            if (top.length === 0) {
+                html = '<p style="color: var(--text-secondary);">Nenhum usuário com livros lidos ainda.</p>';
+            } else {
+                html = '<div class="grade-livros">';
+                top.forEach((u, i) => {
+                    const pos = i + 1;
+                    let bg, color;
+                    if (pos === 1) { bg = '#FFD700'; color = '#000'; }
+                    else if (pos === 2) { bg = '#C0C0C0'; color = '#000'; }
+                    else if (pos === 3) { bg = '#CD7F32'; color = '#fff'; }
+                    else { bg = '#E74C3C'; color = '#fff'; }
+
+                    const foto = u.foto || 'static/src/avatares/usuario.jpg';
+                    const apelido = u.apelido || u.nome;
+                    html += `
+                    <div class="livro-card" style="cursor:default; position:relative;">
+                        <div class="capa" style="aspect-ratio:1/1; background:transparent; display:flex; align-items:center; justify-content:center; padding:10px; position:relative;">
+                            <img src="${foto}" alt="${u.nome}" style="width:80%; height:80%; border-radius:50%; object-fit:cover; border:3px solid var(--accent-color);" onerror="this.src='static/src/avatares/usuario.jpg'">
+                            <span style="position:absolute; top:10%; right:10%; background:${bg}; color:${color}; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:0.9rem; border:2px solid rgba(255,255,255,0.6); box-shadow:0 2px 8px rgba(0,0,0,0.3);">${pos}</span>
+                        </div>
+                        <div class="info" style="text-align:center;">
+                            <h4>${apelido}</h4>
+                            <span style="font-size:0.8rem; color: var(--text-secondary);">📚 ${u.livros_lidos} livros lidos</span>
+                        </div>
+                    </div>`;
+                });
+                html += '</div>';
+            }
+        } else {
+            const livros = await db.livros.toArray();
+            const ativos = await db.alugueis.where({ status: 'ativo' }).toArray();
+            const alugadosSet = new Set(ativos.map(a => a.livro.split(' - ')[0].trim().toLowerCase()));
+
+            let lista = [];
+            if (tipo === 'top_livros') {
+                lista = livros.sort(() => 0.5 - Math.random()).slice(0, 5);
+            } else if (tipo === 'novos_livros') {
+                lista = livros.sort((a, b) => b.id - a.id).slice(0, 5);
+            } else {
+                lista = livros.slice(0, 5);
+            }
+
+            html = '<div class="grade-livros">';
+            lista.forEach(livro => {
+                const tituloSimples = livro.titulo.split(' - ')[0].trim().toLowerCase();
+                const disponivel = !alugadosSet.has(tituloSimples);
+                html += gerarCardLivro(livro, disponivel);
+            });
+            html += '</div>';
+        }
+
+        container.innerHTML = html;
+
+        // Adiciona listeners para abrir detalhes
+        container.querySelectorAll('.livro-card[data-titulo]').forEach(card => {
+            card.addEventListener('click', () => abrirLivro(card.dataset.titulo));
+        });
+    }
+
+    // ================================================================
+    // ATUALIZAÇÃO AUTOMÁTICA (com controle de intervalo)
+    // ================================================================
+    let intervaloAtualizacao = null;
+
+    function iniciarAtualizacaoAutomatica() {
+        if (intervaloAtualizacao) clearInterval(intervaloAtualizacao);
+        intervaloAtualizacao = setInterval(async () => {
+            const abaAtiva = document.querySelector('.btn-filtro[style*="accent-color"]');
+            if (abaAtiva) {
+                const tipo = abaAtiva.dataset.tipo;
+                await renderizarAba(tipo);
+                console.log('🔄 Aba atualizada automaticamente.');
+            }
+        }, 30000);
+    }
+
+    function pararAtualizacaoAutomatica() {
+        if (intervaloAtualizacao) {
+            clearInterval(intervaloAtualizacao);
+            intervaloAtualizacao = null;
+        }
+    }
+
+    // ================================================================
     // SEÇÃO: PÁGINA INICIAL
     // ================================================================
     async function renderInicio() {
@@ -61,78 +179,6 @@ document.addEventListener('DOMContentLoaded', () => {
             await aguardarBanco();
             console.log('📌 Renderizando página inicial...');
 
-            async function renderizarAba(tipo) {
-                const container = document.getElementById('grade-destaques');
-                if (!container) return;
-                let html = '';
-
-                if (tipo === 'top_usuarios') {
-                    const clientes = await db.clientes.toArray();
-                    const top = clientes.filter(c => c.livros_lidos > 0)
-                                       .sort((a, b) => (b.livros_lidos || 0) - (a.livros_lidos || 0))
-                                       .slice(0, 5);
-                    if (top.length === 0) {
-                        html = '<p style="color: var(--text-secondary);">Nenhum usuário com livros lidos ainda.</p>';
-                    } else {
-                        html = '<div class="grade-livros">';
-                        top.forEach((u, i) => {
-                            const pos = i + 1;
-                            let bg, color;
-                            if (pos === 1) { bg = '#FFD700'; color = '#000'; }
-                            else if (pos === 2) { bg = '#C0C0C0'; color = '#000'; }
-                            else if (pos === 3) { bg = '#CD7F32'; color = '#fff'; }
-                            else { bg = '#E74C3C'; color = '#fff'; }
-                            const foto = u.foto || 'static/src/avatares/usuario.jpg';
-                            const apelido = u.apelido || u.nome;
-                            html += `
-                            <div class="livro-card" style="cursor:default; position:relative;">
-                                <div class="capa" style="aspect-ratio:1/1; background:transparent; display:flex; align-items:center; justify-content:center; padding:10px; position:relative;">
-                                    <img src="${foto}" alt="${u.nome}" style="width:80%; height:80%; border-radius:50%; object-fit:cover; border:3px solid var(--accent-color);" onerror="this.src='static/src/avatares/usuario.jpg'">
-                                    <span style="position:absolute; top:10%; right:10%; background:${bg}; color:${color}; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:0.9rem; border:2px solid rgba(255,255,255,0.6); box-shadow:0 2px 8px rgba(0,0,0,0.3);">${pos}</span>
-                                </div>
-                                <div class="info" style="text-align:center;">
-                                    <h4>${apelido}</h4>
-                                    <span style="font-size:0.8rem; color: var(--text-secondary);">📚 ${u.livros_lidos} livros lidos</span>
-                                </div>
-                            </div>`;
-                        });
-                        html += '</div>';
-                    }
-                } else {
-                    const livros = await db.livros.toArray();
-                    const ativos = await db.alugueis.where({ status: 'ativo' }).toArray();
-                    const alugadosSet = new Set(ativos.map(a => a.livro.split(' - ')[0].trim().toLowerCase()));
-                    const lista = livros.sort(() => 0.5 - Math.random()).slice(0, 5);
-                    html = '<div class="grade-livros">';
-                    lista.forEach(livro => {
-                        const tituloSimples = livro.titulo.split(' - ')[0].trim().toLowerCase();
-                        const disponivel = !alugadosSet.has(tituloSimples);
-                        const statusClass = disponivel ? 'status-disponivel' : 'status-alugado';
-                        const statusTexto = disponivel ? 'Disponível' : 'Alugado';
-                        const capa = `static/src/${encodeURIComponent(livro.titulo)}.jpg`;
-                        html += `
-                        <div class="livro-card" data-titulo="${livro.titulo}" style="cursor:pointer;">
-                            <div class="capa">
-                                <img src="${capa}" alt="${livro.titulo}" onerror="this.style.display='none'; this.parentElement.querySelector('.placeholder').style.display='flex';">
-                                <div class="placeholder" style="display:none;">📚</div>
-                            </div>
-                            <div class="info">
-                                <h4>${livro.titulo}</h4>
-                                <span class="status ${statusClass}">${statusTexto}</span>
-                            </div>
-                        </div>`;
-                    });
-                    html += '</div>';
-                }
-                container.innerHTML = html;
-
-                // Adiciona listeners para abrir detalhes (evita onclick inline)
-                container.querySelectorAll('.livro-card[data-titulo]').forEach(card => {
-                    card.addEventListener('click', () => abrirLivro(card.dataset.titulo));
-                });
-            }
-
-            // Monta layout da página inicial
             let html = `
             <div class="card-user">
                 <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
@@ -194,6 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="full-width"><button type="submit" class="btn-user">Enviar avaliação</button></div>
             </form>`;
             html += '</div>';
+
             contentUser.innerHTML = html;
 
             // Configura as abas
@@ -209,6 +256,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             botoesFiltro.forEach(btn => btn.addEventListener('click', () => setAba(btn.dataset.tipo)));
             await setAba('top_livros');
+
+            // Inicia a atualização automática
+            iniciarAtualizacaoAutomatica();
 
             // Listener do formulário de avaliação
             document.getElementById('form-avaliacao-inicio').addEventListener('submit', async (e) => {
@@ -239,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ================================================================
-    // SEÇÃO: BIBLIOTECA
+    // SEÇÃO: BIBLIOTECA (usando gerarCardLivro)
     // ================================================================
     async function renderBiblioteca() {
         try {
@@ -252,20 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
             livros.forEach(livro => {
                 const tituloSimples = livro.titulo.split(' - ')[0].trim().toLowerCase();
                 const disponivel = !alugadosSet.has(tituloSimples);
-                const statusClass = disponivel ? 'status-disponivel' : 'status-alugado';
-                const statusTexto = disponivel ? 'Disponível' : 'Alugado';
-                const capa = `static/src/${encodeURIComponent(livro.titulo)}.jpg`;
-                html += `
-                <div class="livro-card" data-titulo="${livro.titulo}" style="cursor:pointer;">
-                    <div class="capa">
-                        <img src="${capa}" alt="${livro.titulo}" onerror="this.style.display='none'; this.parentElement.querySelector('.placeholder').style.display='flex';">
-                        <div class="placeholder" style="display:none;">📚</div>
-                    </div>
-                    <div class="info">
-                        <h4>${livro.titulo}</h4>
-                        <span class="status ${statusClass}">${statusTexto}</span>
-                    </div>
-                </div>`;
+                html += gerarCardLivro(livro, disponivel);
             });
             html += '</div></div>';
             contentUser.innerHTML = html;
@@ -281,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ================================================================
-    // SEÇÃO: MEUS LIVROS
+    // SEÇÃO: MEUS LIVROS (mesmo código)
     // ================================================================
     async function renderMeusLivros() {
         try {
@@ -308,7 +345,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const dataReal    = parseData(aluguel.data_devolucao_real);
                 const devReal     = dataReal ? dataReal.toLocaleDateString('pt-BR') : '-';
 
-                // Cálculo de atraso e multa
                 let diasAtraso = aluguel.dias_atraso;
                 let multa      = aluguel.multa;
                 if ((diasAtraso === undefined || diasAtraso === null) &&
@@ -334,13 +370,11 @@ document.addEventListener('DOMContentLoaded', () => {
             html += '</tbody></table></div>';
             contentUser.innerHTML = html;
 
-            // Adiciona os botões de ação via JavaScript, sem onclick inline
+            // Adiciona botões de ação
             document.querySelectorAll('tr[data-id]').forEach(row => {
                 const aluguelId = parseInt(row.dataset.id);
                 const acoesCell = row.querySelector('.acoes-cell');
                 if (acoesCell) {
-                    // Verifica status (precisa do objeto aluguel, mas podemos acessar o texto da coluna status)
-                    // Melhor: use o array alugueis original
                     const aluguel = alugueis.find(a => a.id === aluguelId);
                     if (aluguel && aluguel.status === 'ativo') {
                         const btnRenovar = document.createElement('button');
@@ -374,7 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ================================================================
-    // SEÇÃO: PERFIL (VISUALIZAÇÃO)
+    // SEÇÃO: PERFIL (VISUALIZAÇÃO) – MANTIDO
     // ================================================================
     async function renderPerfil() {
         try {
@@ -429,7 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ================================================================
-    // SEÇÃO: EDITAR PERFIL
+    // SEÇÃO: EDITAR PERFIL – MANTIDO
     // ================================================================
     async function renderEditarPerfil() {
         try {
@@ -522,13 +556,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ================================================================
-    // SOLICITAR LIVROS
+    // SEÇÃO: SOLICITAR LIVROS – MANTIDO
     // ================================================================
     async function renderSolicitarLivros() {
         try {
             await aguardarBanco();
 
-            // Verifica se a tabela solicitacoes existe (fallback)
             if (!db.solicitacoes) {
                 contentUser.innerHTML = '<div class="card-user"><h3>📩 Solicitar Livros</h3><p>Recurso temporariamente indisponível.</p></div>';
                 return;
@@ -629,13 +662,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ================================================================
-    // ALUGAR LIVRO (USUÁRIO)
+    // SEÇÃO: ALUGAR LIVRO (USUÁRIO) – MANTIDO
     // ================================================================
     async function renderAlugarUsuario() {
         try {
             await aguardarBanco();
 
-            // Verifica se o usuário já tem um livro alugado
             const aluguelAtivoUsuario = await db.alugueis
                 .where('cliente_id').equals(usuarioId)
                 .filter(a => a.status === 'ativo')
@@ -657,7 +689,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
                 document.getElementById('btn-ir-meus-livros').addEventListener('click', () => {
-                    // Navega para a seção "Meus Livros" via clique no menu
                     const linkMeusLivros = document.querySelector('a[data-section="meus-livros"]');
                     if (linkMeusLivros) linkMeusLivros.click();
                     else renderMeusLivros();
@@ -665,7 +696,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Carrega todos os livros e filtra disponíveis
             const livros = await db.livros.toArray();
             const alugueisAtivos = await db.alugueis.where('status').equals('ativo').toArray();
             const titulosAlugados = new Set(alugueisAtivos.map(a => a.livro));
@@ -726,7 +756,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                // Verifica novamente se o livro não foi alugado enquanto a página estava aberta
                 const livroJaAlugado = await db.alugueis
                     .where('livro').equals(livroTitulo)
                     .filter(a => a.status === 'ativo')
@@ -750,7 +779,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 notificar(`Livro "${livroTitulo}" alugado com sucesso!`);
-                // Redireciona para Meus Livros
                 const linkMeusLivros = document.querySelector('a[data-section="meus-livros"]');
                 if (linkMeusLivros) linkMeusLivros.click();
                 else renderMeusLivros();
@@ -762,26 +790,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ================================================================
-    // FUNÇÕES GLOBAIS (para serem chamadas de qualquer lugar)
-    // ================================================================
-        // ================================================================
-    // FUNÇÃO PARA ABRIR DETALHES DO LIVRO (MODAL)
+    // FUNÇÕES GLOBAIS
     // ================================================================
     window.abrirLivro = async (titulo) => {
         try {
             await aguardarBanco();
-            // Busca o livro pelo título exato
             const livro = await db.livros.where('titulo').equals(titulo).first();
             if (!livro) {
                 notificar('Livro não encontrado.', 'erro');
                 return;
             }
 
-            // Remove modal anterior se existir
             const existente = document.getElementById('modal-detalhes-livro');
             if (existente) existente.remove();
 
-            // Cria o modal
             const modal = document.createElement('div');
             modal.id = 'modal-detalhes-livro';
             modal.style.cssText = `
@@ -797,10 +819,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 animation: fadeIn 0.3s ease;
             `;
 
-            // Capa do livro (se existir)
             const capaUrl = `static/src/${encodeURIComponent(livro.titulo)}.jpg`;
 
-            // Monta o conteúdo do modal
             modal.innerHTML = `
                 <div style="
                     background: var(--bg-card, #16213e);
@@ -853,13 +873,10 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
 
             document.body.appendChild(modal);
-
-            // Fecha o modal ao clicar fora do conteúdo
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) modal.remove();
             });
 
-            // Adiciona a animação de fade (caso não exista no CSS)
             if (!document.getElementById('style-modal-fade')) {
                 const style = document.createElement('style');
                 style.id = 'style-modal-fade';
@@ -923,7 +940,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 multa = diasAtraso * MULTA_POR_DIA;
             }
 
-            // Fluxo de confirmação com modais (definidos em utils.js)
             let confirmado = true;
             if (diasAtraso > 0) {
                 if (typeof exibirModalMulta === 'function') {
@@ -971,7 +987,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ================================================================
-    // NAVEGAÇÃO ENTRE SEÇÕES
+    // NAVEGAÇÃO ENTRE SEÇÕES (com parada da atualização automática)
     // ================================================================
     const menuLinks = document.querySelectorAll('.menu-user a[data-section]');
     const titlesMap = {
@@ -987,6 +1003,10 @@ document.addEventListener('DOMContentLoaded', () => {
     menuLinks.forEach(link => {
         link.addEventListener('click', function (e) {
             e.preventDefault();
+
+            // Para a atualização automática ao sair da página inicial
+            pararAtualizacaoAutomatica();
+
             const section = this.getAttribute('data-section');
             sectionTitle.textContent = titlesMap[section] || section;
 
