@@ -59,7 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function gerarCardLivro(livro, disponivel) {
         const statusClass = disponivel ? 'status-disponivel' : 'status-alugado';
         const statusTexto = disponivel ? 'Disponível' : 'Alugado';
-        const capa = `static/src/${encodeURIComponent(livro.titulo)}.jpg`;
+        // Se tiver capa personalizada, usa ela; senão, usa o padrão
+        const capa = livro.capa || `static/src/${encodeURIComponent(livro.titulo)}.jpg`;
         return `
         <div class="livro-card" data-titulo="${livro.titulo}" style="cursor:pointer;">
             <div class="capa">

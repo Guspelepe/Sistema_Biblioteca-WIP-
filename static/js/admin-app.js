@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Função de cadastro de novo usuário (formulário inline)
     async function renderCadastroUsuario() {
         await aguardarBanco();
-        let html = `<div class="card"><h3>➕ Cadastrar Novo Usuário</h3>
+        let html = `<div class="card"><h3>Cadastrar Novo Usuário</h3>
             <form id="form-cadastro-usuario">
                 <div>
                     <label for="nome">Nome Completo</label>
@@ -302,6 +302,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 4. ADICIONAR LIVROS
+    // 4. ADICIONAR LIVROS (com todos os campos)
     async function renderAdicionarLivros() {
         await aguardarBanco();
         let html = `
@@ -309,20 +310,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h3>➕ Adicionar Novo Livro</h3>
                 <form id="form-adicionar-livro">
                     <div>
-                        <label for="novo-titulo">Título</label>
+                        <label for="novo-titulo">Título *</label>
                         <input type="text" id="novo-titulo" placeholder="Nome do livro" required>
                     </div>
                     <div>
-                        <label for="novo-autor">Autor</label>
+                        <label for="novo-autor">Autor *</label>
                         <input type="text" id="novo-autor" placeholder="Nome do autor" required>
                     </div>
                     <div>
-                        <label for="novo-ano">Ano</label>
+                        <label for="novo-ano">Ano *</label>
                         <input type="number" id="novo-ano" placeholder="Ano de publicação" min="1000" max="2099" required>
                     </div>
                     <div>
-                        <label for="novo-editora">Editora</label>
+                        <label for="novo-editora">Editora *</label>
                         <input type="text" id="novo-editora" placeholder="Editora" required>
+                    </div>
+                    <div>
+                        <label for="novo-genero">Gênero</label>
+                        <input type="text" id="novo-genero" placeholder="Ex: Ficção, Fantasia, Romance...">
+                    </div>
+                    <div>
+                        <label for="novo-classificacao">Classificação indicativa</label>
+                        <input type="text" id="novo-classificacao" placeholder="Ex: Livre, 10+, 12+, 14+, 16+, 18+">
+                    </div>
+                    <div class="full-width">
+                        <label for="novo-sinopse">Sinopse</label>
+                        <textarea id="novo-sinopse" rows="4" placeholder="Breve descrição do livro..." style="resize:vertical;"></textarea>
+                    </div>
+                    <div class="full-width">
+                        <label for="novo-capa">URL da capa (opcional)</label>
+                        <input type="text" id="novo-capa" placeholder="https://exemplo.com/capa.jpg">
                     </div>
                     <div class="full-width">
                         <button type="submit">Adicionar Livro</button>
@@ -338,6 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         contentArea.innerHTML = html;
 
+        // Função para carregar os últimos livros com colunas extras
         async function carregarUltimosLivros() {
             const livros = await db.livros.toArray();
             const ultimos = livros.sort((a, b) => b.id - a.id).slice(0, 5);
@@ -347,24 +365,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             let tabela = `<table>
-                <thead><tr><th>Título</th><th>Autor</th><th>Ano</th><th>Editora</th></tr></thead><tbody>`;
+                <thead><tr>
+                    <th>Título</th>
+                    <th>Autor</th>
+                    <th>Ano</th>
+                    <th>Editora</th>
+                    <th>Gênero</th>
+                    <th>Classificação</th>
+                </tr></thead>
+                <tbody>`;
             ultimos.forEach(l => {
-                tabela += `<tr><td>${l.titulo}</td><td>${l.autor}</td><td>${l.ano}</td><td>${l.editora}</td></tr>`;
+                tabela += `<tr>
+                    <td>${l.titulo}</td>
+                    <td>${l.autor}</td>
+                    <td>${l.ano}</td>
+                    <td>${l.editora}</td>
+                    <td>${l.genero || '—'}</td>
+                    <td>${l.classificacao || 'Livre'}</td>
+                </tr>`;
             });
             tabela += `</tbody></table>`;
             container.innerHTML = tabela;
         }
         carregarUltimosLivros();
 
+        // Evento de submit do formulário
         document.getElementById('form-adicionar-livro').addEventListener('submit', async (e) => {
             e.preventDefault();
             const titulo = document.getElementById('novo-titulo').value.trim();
             const autor = document.getElementById('novo-autor').value.trim();
             const ano = parseInt(document.getElementById('novo-ano').value);
             const editora = document.getElementById('novo-editora').value.trim();
+            const genero = document.getElementById('novo-genero').value.trim();
+            const classificacao = document.getElementById('novo-classificacao').value.trim();
+            const sinopse = document.getElementById('novo-sinopse').value.trim();
+            const capa = document.getElementById('novo-capa').value.trim();
 
             if (!titulo || !autor || !ano || !editora) {
-                notificar('Preencha todos os campos.', 'erro');
+                notificar('Preencha os campos obrigatórios (Título, Autor, Ano, Editora).', 'erro');
                 return;
             }
 
@@ -374,12 +412,235 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            await db.livros.add({ titulo, autor, ano, editora });
+            await db.livros.add({
+                titulo,
+                autor,
+                ano,
+                editora,
+                genero: genero || '',
+                classificacao: classificacao || 'Livre',
+                sinopse: sinopse || 'Sinopse não disponível.',
+                capa: capa || ''
+            });
+
             notificar(`Livro "${titulo}" adicionado com sucesso.`);
             document.getElementById('form-adicionar-livro').reset();
-            carregarUltimosLivros();
+            carregarUltimosLivros(); // atualiza a lista
         });
     }
+
+    // ================================================================
+    // EDITAR LIVROS
+    // ================================================================
+    async function renderEditarLivros() {
+        await aguardarBanco();
+        const livros = await db.livros.toArray();
+        // Ordena por título (alfabético)
+        livros.sort((a, b) => a.titulo.localeCompare(b.titulo));
+
+        let html = `<div class="card"><h3>✏️ Editar Livros</h3>`;
+
+        if (livros.length === 0) {
+            html += `<p>Nenhum livro cadastrado.</p>`;
+        } else {
+            html += `<table>
+                <thead><tr>
+                    <th>Título</th>
+                    <th>Autor</th>
+                    <th>Ano</th>
+                    <th>Editora</th>
+                    <th>Gênero</th>
+                    <th>Classificação</th>
+                    <th>Ações</th>
+                </tr></thead>
+                <tbody>`;
+            livros.forEach(livro => {
+                html += `<tr data-id="${livro.id}">
+                    <td>${livro.titulo}</td>
+                    <td>${livro.autor}</td>
+                    <td>${livro.ano}</td>
+                    <td>${livro.editora}</td>
+                    <td>${livro.genero || '—'}</td>
+                    <td>${livro.classificacao || 'Livre'}</td>
+                    <td>
+                        <button onclick="abrirModalEditarLivro(${livro.id})" style="background:#3498db; color:#fff; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;">✏️ Editar</button>
+                        <button onclick="excluirLivro(${livro.id}, '${livro.titulo.replace(/'/g, "\\'")}')" style="background:#e74c3c; color:#fff; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem; margin-left:4px;">🗑️</button>
+                    </td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+        }
+        html += `</div>`;
+
+        contentArea.innerHTML = html;
+    }
+
+    // ===== FUNÇÕES GLOBAIS PARA EDITAR/EXCLUIR LIVROS =====
+    window.abrirModalEditarLivro = async function(id) {
+        const livro = await db.livros.get(id);
+        if (!livro) return;
+
+        const existente = document.getElementById('modal-editar-livro');
+        if (existente) existente.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'modal-editar-livro';
+        modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:9999; backdrop-filter:blur(4px);';
+        modal.innerHTML = `
+            <div style="background:#fff; padding:28px; border-radius:8px; max-width:600px; width:90%; max-height:90vh; overflow-y:auto;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <h3 style="margin:0;">✏️ Editar Livro</h3>
+                    <button onclick="this.closest('#modal-editar-livro').remove()" style="background:none; border:none; font-size:1.8rem; cursor:pointer; color:#999;">&times;</button>
+                </div>
+                <form id="form-editar-livro">
+                    <input type="hidden" id="edit-livro-id" value="${livro.id}">
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; font-weight:600; margin-bottom:4px;">Título</label>
+                        <input type="text" id="edit-titulo" value="${livro.titulo}" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;" required>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; font-weight:600; margin-bottom:4px;">Autor</label>
+                        <input type="text" id="edit-autor" value="${livro.autor}" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;" required>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; font-weight:600; margin-bottom:4px;">Ano</label>
+                        <input type="number" id="edit-ano" value="${livro.ano}" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;" required>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; font-weight:600; margin-bottom:4px;">Editora</label>
+                        <input type="text" id="edit-editora" value="${livro.editora}" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;" required>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; font-weight:600; margin-bottom:4px;">Gênero</label>
+                        <input type="text" id="edit-genero" value="${livro.genero || ''}" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; font-weight:600; margin-bottom:4px;">Classificação</label>
+                        <input type="text" id="edit-classificacao" value="${livro.classificacao || ''}" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; font-weight:600; margin-bottom:4px;">Sinopse</label>
+                        <textarea id="edit-sinopse" rows="4" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">${livro.sinopse || ''}</textarea>
+                    </div>
+
+                    <!-- ===== NOVO CAMPO: CAPA ===== -->
+                    <div style="margin-bottom:16px; border-top:1px solid #eee; padding-top:16px;">
+                        <label style="display:block; font-weight:600; margin-bottom:4px;">📷 URL da capa (opcional)</label>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <input type="text" id="edit-capa" value="${livro.capa || ''}" placeholder="https://exemplo.com/capa.jpg" style="flex:1; min-width:200px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                            <input type="file" id="edit-capa-upload" accept="image/*" style="padding:6px;">
+                        </div>
+                        <div id="preview-capa-container" style="margin-top:8px; ${livro.capa ? '' : 'display:none;'}">
+                            <img id="preview-capa" src="${livro.capa || ''}" alt="Capa do livro" style="max-width:120px; max-height:160px; border-radius:4px; border:1px solid #ddd;">
+                            <button type="button" onclick="document.getElementById('edit-capa').value=''; document.getElementById('preview-capa-container').style.display='none';" style="background:#e74c3c; color:#fff; border:none; padding:2px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem; margin-left:8px;">Remover</button>
+                        </div>
+                        <small style="color:#777;">Insira uma URL ou faça upload de uma imagem (será gerada uma URL temporária).</small>
+                    </div>
+
+                    <button type="submit" style="background:#27ae60; color:#fff; border:none; padding:10px 20px; border-radius:4px; cursor:pointer; font-weight:600;">💾 Salvar Alterações</button>
+                    <button type="button" onclick="this.closest('#modal-editar-livro').remove()" style="background:#95a5a6; color:#fff; border:none; padding:10px 20px; border-radius:4px; cursor:pointer; font-weight:600; margin-left:8px;">Cancelar</button>
+                </form>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // ===== LÓGICA DE PRÉ-VISUALIZAÇÃO DA CAPA =====
+        const inputCapa = document.getElementById('edit-capa');
+        const inputUpload = document.getElementById('edit-capa-upload');
+        const previewContainer = document.getElementById('preview-capa-container');
+        const previewImg = document.getElementById('preview-capa');
+
+        function atualizarPreview(url) {
+            if (url && url.trim() !== '') {
+                previewImg.src = url;
+                previewContainer.style.display = 'block';
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        }
+
+        // Quando digitar a URL manualmente
+        inputCapa.addEventListener('input', () => atualizarPreview(inputCapa.value));
+
+        // Upload de arquivo (gera URL temporária via FileReader)
+        inputUpload.addEventListener('change', function(e) {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    const dataUrl = ev.target.result;
+                    inputCapa.value = dataUrl; // preenche o campo URL com a imagem em base64
+                    atualizarPreview(dataUrl);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Botão remover (já está no HTML)
+        // O botão remover já está configurado no HTML, mas vamos garantir que ele funcione
+        const removerBtn = modal.querySelector('#preview-capa-container button');
+        if (removerBtn) {
+            removerBtn.addEventListener('click', function() {
+                inputCapa.value = '';
+                previewContainer.style.display = 'none';
+            });
+        }
+
+        // ===== SUBMISSÃO =====
+        document.getElementById('form-editar-livro').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const livroId = parseInt(document.getElementById('edit-livro-id').value);
+            const titulo = document.getElementById('edit-titulo').value.trim();
+            const autor = document.getElementById('edit-autor').value.trim();
+            const ano = parseInt(document.getElementById('edit-ano').value);
+            const editora = document.getElementById('edit-editora').value.trim();
+            const genero = document.getElementById('edit-genero').value.trim();
+            const classificacao = document.getElementById('edit-classificacao').value.trim();
+            const sinopse = document.getElementById('edit-sinopse').value.trim();
+            const capa = document.getElementById('edit-capa').value.trim(); // <-- CAPA
+
+            if (!titulo || !autor || !ano || !editora) {
+                notificar('Preencha todos os campos obrigatórios.', 'erro');
+                return;
+            }
+
+            const existente = await db.livros.where('titulo').equals(titulo).first();
+            if (existente && existente.id !== livroId) {
+                notificar('Já existe um livro com este título.', 'erro');
+                return;
+            }
+
+            await db.livros.update(livroId, {
+                titulo,
+                autor,
+                ano,
+                editora,
+                genero: genero || '',
+                classificacao: classificacao || 'Livre',
+                sinopse: sinopse || 'Sinopse não disponível.',
+                capa: capa || '' // <-- SALVA A CAPA
+            });
+
+            modal.remove();
+            notificar(`Livro "${titulo}" atualizado com sucesso!`);
+            renderEditarLivros(); // recarrega a lista
+        });
+    };
+
+    window.excluirLivro = async function(id, titulo) {
+        if (!confirm(`Tem certeza que deseja excluir "${titulo}"? Esta ação é irreversível.`)) return;
+
+        // Verifica se o livro tem aluguel ativo
+        const aluguelAtivo = await db.alugueis.where('livro').equals(titulo).filter(a => a.status === 'ativo').first();
+        if (aluguelAtivo) {
+            notificar('Este livro possui um aluguel ativo. Não pode ser excluído.', 'erro');
+            return;
+        }
+
+        await db.livros.delete(id);
+        notificar(`Livro "${titulo}" excluído com sucesso.`);
+        renderEditarLivros();
+    };
 
     // 5. ALUGAR
     async function renderAlugar() {
@@ -755,13 +1016,27 @@ document.addEventListener('DOMContentLoaded', function() {
             const section = this.getAttribute('data-section');
             const titles = {
                 'usuarios': 'Usuários',
-                'relatorio': 'Relatório',
                 'catalogo': 'Catálogo',
                 'adicionar-livros': 'Adicionar Livros',
+                'editar-livros': 'Editar Livros',  // <-- ADICIONE
                 'alugar': 'Alugar Livro',
                 'devolver': 'Devolver',
-                'solicitacoes': 'Solicitações', 
+                'relatorio': 'Relatório',
+                'solicitacoes': 'Solicitações',
             };
+
+            // No switch:
+            switch (section) {
+                case 'usuarios': renderUsuarios(); break;
+                case 'catalogo': renderCatalogo(); break;
+                case 'adicionar-livros': renderAdicionarLivros(); break;
+                case 'editar-livros': renderEditarLivros(); break;   // <-- ADICIONE
+                case 'alugar': renderAlugar(); break;
+                case 'devolver': renderDevolver(); break;
+                case 'relatorio': renderRelatorio(); break;
+                case 'solicitacoes': renderSolicitacoes(); break;
+                default: contentArea.innerHTML = '<p>Seção em desenvolvimento.</p>';
+            }
             sectionTitle.textContent = titles[section] || section;
 
             menuLinks.forEach(l => l.classList.remove('active'));

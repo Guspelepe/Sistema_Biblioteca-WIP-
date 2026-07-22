@@ -4,11 +4,11 @@
 
 window.db = new Dexie('BibliotecaDB');
 
-// ===== VERSÃO 7 – inclui campos de multa e novos campos nos livros =====
-db.version(7).stores({
+// ===== VERSÃO 8 – adiciona campo capa nos livros =====
+db.version(8).stores({
     clientes: '++id, cpf, nome, apelido, foto, livros_lidos, media_estrelas, lendo_agora, bio, nascimento',
     alugueis: '++id, cliente_id, status, livro, dias_atraso, multa',
-    livros: '++id, titulo, genero',
+    livros: '++id, titulo, genero, capa', // <-- ADICIONE 'capa'
     solicitacoes: '++id, usuario_id, titulo, autor, editora, comentario, data, status, resposta',
     avaliacoes: '++id, livro, usuario_id, nota, comentario, data',
     frases: '++id, texto, autor'
@@ -254,6 +254,27 @@ async function migrarLivros() {
 }
 
 // ==========================================
+// MIGRAÇÃO PARA ADICIONAR CAMPO CAPA
+// ==========================================
+async function migrarCapa() {
+    try {
+        const livrosDB = await db.livros.toArray();
+        let atualizados = 0;
+        for (const livro of livrosDB) {
+            if (livro.capa === undefined) {
+                await db.livros.update(livro.id, { capa: '' });
+                atualizados++;
+            }
+        }
+        if (atualizados > 0) {
+            console.warn(`📚 ${atualizados} livros receberam o campo capa.`);
+        }
+    } catch (err) {
+        console.error('❌ Erro na migração de capa:', err);
+    }
+}
+
+// ==========================================
 // FUNÇÃO DE SINCRONIZAÇÃO DE LIVROS (adiciona novos e remove os que saíram)
 // ==========================================
 async function sincronizarLivros() {
@@ -444,4 +465,16 @@ db.on('ready', async () => {
     } catch (err) {
         console.error('❌ Erro na inicialização:', err);
     }
+
+    // 1. Livros
+        const countLivros = await db.livros.count();
+        if (countLivros === 0) {
+            await db.livros.bulkAdd(LIVROS_INICIAIS);
+            console.warn(`📚 ${LIVROS_INICIAIS.length} livros inicializados.`);
+        } else {
+            console.warn(`📚 Já existem ${countLivros} livros.`);
+            await migrarLivros();
+            await sincronizarLivros();
+            await migrarCapa(); // <-- ADICIONE AQUI
+        }
 });
