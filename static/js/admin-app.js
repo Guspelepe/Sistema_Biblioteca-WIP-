@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ================================================================
 
     // 1. USUÁRIOS (com gerenciamento: novo, excluir, resetar senha)
+    // 1. USUÁRIOS (com tabela otimizada)
     async function renderUsuarios() {
         await aguardarBanco();
         const clientes = await db.clientes.toArray();
@@ -47,37 +48,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let html = `<div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <h3 style="margin:0; border-bottom:none; padding-bottom:0;">Usuários Cadastrados</h3>
+                <h3 style="margin:0; border-bottom:none; padding-bottom:0;">👥 Usuários Cadastrados</h3>
                 <button id="btn-novo-usuario" class="tema-botao-sidebar" style="width:auto; padding:8px 16px; background:var(--btn-primary); color:#fff; border:none; border-radius:4px; cursor:pointer;">➕ Novo Usuário</button>
             </div>`;
 
         if (clientes.length === 0) {
             html += `<p>Nenhum usuário cadastrado.</p>`;
         } else {
-            html += `<table>
+            html += `<table class="tabela-usuarios">
                 <thead>
                     <tr>
-                        <th>Foto</th>
-                        <th>Nome</th>
-                        <th>Apelido</th>
-                        <th>CPF</th>
-                        <th>Livro Alugado</th>
-                        <th>Ações</th>
+                        <th style="width:60px; text-align:center;">Foto</th>
+                        <th style="text-align:left;">Nome</th>
+                        <th style="text-align:left;">Apelido</th>
+                        <th style="text-align:center;">CPF</th>
+                        <th style="text-align:center;">Livro Alugado</th>
+                        <th style="text-align:center; min-width:120px;">Ações</th>
                     </tr>
                 </thead>
                 <tbody>`;
             clientes.forEach(c => {
                 const livro = mapaAluguel[c.id] || '—';
-                const fotoHtml = c.foto ? `<img src="${c.foto}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">` : '—';
+                const fotoHtml = c.foto 
+                    ? `<img src="${c.foto}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; display:block; margin:0 auto;">` 
+                    : `<div style="width:36px; height:36px; border-radius:50%; background:var(--bg-sidebar); margin:0 auto; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); font-size:0.8rem;">📷</div>`;
                 html += `<tr>
-                    <td>${fotoHtml}</td>
-                    <td>${c.nome}</td>
-                    <td>${c.apelido || '—'}</td>
-                    <td>${c.cpf}</td>
-                    <td>${livro !== '—' ? `<span class="status-ativo">${livro}</span>` : '—'}</td>
-                    <td>
-                        <button onclick="resetarSenha(${c.id}, '${c.nome.replace(/'/g, "\\'")}')" style="background:#f39c12; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem;">Senha</button>
-                        <button onclick="excluirUsuario(${c.id}, '${c.nome.replace(/'/g, "\\'")}')" style="background:#e74c3c; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem; margin-left:4px;">Excluir</button>
+                    <td style="text-align:center; padding:4px;">${fotoHtml}</td>
+                    <td style="text-align:left; font-weight:500;">${c.nome}</td>
+                    <td style="text-align:left; color:var(--text-secondary);">${c.apelido || '—'}</td>
+                    <td style="text-align:center; font-family:monospace;">${c.cpf}</td>
+                    <td style="text-align:center;">${livro !== '—' ? `<span class="status-ativo">${livro}</span>` : '—'}</td>
+                    <td style="text-align:center; white-space:nowrap;">
+                        <button onclick="resetarSenha(${c.id}, '${c.nome.replace(/'/g, "\\'")}')" style="background:#f39c12; color:#fff; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.75rem;">🔑 Senha</button>
+                        <button onclick="excluirUsuario(${c.id}, '${c.nome.replace(/'/g, "\\'")}')" style="background:#e74c3c; color:#fff; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.75rem; margin-left:4px;">🗑️ Excluir</button>
                     </td>
                 </tr>`;
             });
@@ -283,24 +286,98 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 3. CATÁLOGO
+    // ================================================================
+    // CATÁLOGO (com edição)
     async function renderCatalogo() {
         await aguardarBanco();
         const livros = await db.livros.toArray();
-        let html = `<div class="card"><h3>Catálogo de Livros (${livros.length})</h3>`;
-        if (livros.length === 0) {
-            html += `<p>Nenhum livro cadastrado.</p>`;
-        } else {
-            html += `<table>
-                <thead><tr><th>Título</th><th>Autor</th><th>Ano</th><th>Editora</th></tr></thead><tbody>`;
-            livros.forEach(l => {
-                html += `<tr><td>${l.titulo}</td><td>${l.autor}</td><td>${l.ano}</td><td>${l.editora}</td></tr>`;
-            });
-            html += `</tbody></table>`;
-        }
-        html += `</div>`;
-        contentArea.innerHTML = html;
-    }
+        livros.sort((a, b) => a.titulo.localeCompare(b.titulo));
 
+        let html = `
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                    <h3 style="margin:0;">Catálogo de Livros</h3>
+                    <div style="display:flex; gap:8px; flex:1; max-width:400px; min-width:180px;">
+                        <input type="text" id="pesquisa-catalogo" placeholder="Pesquisar livro..." style="flex:1; padding:8px 14px; border:1px solid var(--border-color, #dce1e6); border-radius:6px; font-size:0.95rem; background:var(--input-bg, #fff); color:var(--text-primary, #2c3e50);">
+                        <button id="btn-limpar-pesquisa" style="padding:8px 12px; background:var(--btn-danger, #e74c3c); color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:0.8rem;">✕</button>
+                    </div>
+                </div>
+                <div id="tabela-catalogo-container">
+                    <!-- Tabela renderizada aqui -->
+                </div>
+            </div>
+        `;
+
+        contentArea.innerHTML = html;
+
+        // Renderiza a tabela com todos os livros
+        function renderizarTabela(lista) {
+            const container = document.getElementById('tabela-catalogo-container');
+            if (!container) return;
+
+            if (lista.length === 0) {
+                container.innerHTML = `<p style="padding:20px; text-align:center; color:var(--text-secondary);">Nenhum livro encontrado.</p>`;
+                return;
+            }
+
+            let tabela = `<table>
+                <thead><tr>
+                    <th>Título</th>
+                    <th>Autor</th>
+                    <th>Ano</th>
+                    <th>Editora</th>
+                    <th>Gênero</th>
+                    <th>Classificação</th>
+                    <th>Ações</th>
+                </tr></thead>
+                <tbody>`;
+            lista.forEach(livro => {
+                tabela += `<tr data-id="${livro.id}">
+                    <td>${livro.titulo}</td>
+                    <td>${livro.autor}</td>
+                    <td>${livro.ano}</td>
+                    <td>${livro.editora}</td>
+                    <td>${livro.genero || '—'}</td>
+                    <td>${livro.classificacao || 'Livre'}</td>
+                    <td>
+                        <button onclick="abrirModalEditarLivro(${livro.id})" style="background:#3498db; color:#fff; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;">Editar</button>
+                        <button onclick="excluirLivro(${livro.id}, '${livro.titulo.replace(/'/g, "\\'")}')" style="background:#e74c3c; color:#fff; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem; margin-left:4px;">Deletar</button>
+                    </td>
+                </tr>`;
+            });
+            tabela += `</tbody></table>`;
+            container.innerHTML = tabela;
+        }
+
+        // Renderiza a tabela inicial
+        renderizarTabela(livros);
+
+        // ===== LÓGICA DE PESQUISA =====
+        const inputPesquisa = document.getElementById('pesquisa-catalogo');
+        const btnLimpar = document.getElementById('btn-limpar-pesquisa');
+
+        function filtrarLivros() {
+            const termo = inputPesquisa.value.trim().toLowerCase();
+            if (termo === '') {
+                renderizarTabela(livros);
+                return;
+            }
+            const filtrados = livros.filter(l => 
+                l.titulo.toLowerCase().includes(termo) ||
+                l.autor.toLowerCase().includes(termo) ||
+                (l.genero && l.genero.toLowerCase().includes(termo))
+            );
+            renderizarTabela(filtrados);
+        }
+
+        inputPesquisa.addEventListener('input', filtrarLivros);
+
+        btnLimpar.addEventListener('click', () => {
+            inputPesquisa.value = '';
+            renderizarTabela(livros);
+            inputPesquisa.focus();
+        });
+    }
     // 4. ADICIONAR LIVROS
     // 4. ADICIONAR LIVROS (com todos os campos)
     // 4. ADICIONAR LIVROS (completo)
@@ -1038,9 +1115,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const section = this.getAttribute('data-section');
             const titles = {
                 'usuarios': 'Usuários',
-                'catalogo': 'Catálogo',
+                'catalogo': 'Catálogo',          // agora é o editar livros
                 'adicionar-livros': 'Adicionar Livros',
-                'editar-livros': 'Editar Livros',  // <-- ADICIONE
                 'alugar': 'Alugar Livro',
                 'devolver': 'Devolver',
                 'relatorio': 'Relatório',
@@ -1050,9 +1126,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // No switch:
             switch (section) {
                 case 'usuarios': renderUsuarios(); break;
-                case 'catalogo': renderCatalogo(); break;
+                case 'catalogo': renderCatalogo(); break; // agora é a função de editar
                 case 'adicionar-livros': renderAdicionarLivros(); break;
-                case 'editar-livros': renderEditarLivros(); break;   // <-- ADICIONE
                 case 'alugar': renderAlugar(); break;
                 case 'devolver': renderDevolver(); break;
                 case 'relatorio': renderRelatorio(); break;
