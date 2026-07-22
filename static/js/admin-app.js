@@ -303,6 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 4. ADICIONAR LIVROS
     // 4. ADICIONAR LIVROS (com todos os campos)
+    // 4. ADICIONAR LIVROS (completo)
     async function renderAdicionarLivros() {
         await aguardarBanco();
         let html = `
@@ -310,36 +311,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h3>➕ Adicionar Novo Livro</h3>
                 <form id="form-adicionar-livro">
                     <div>
-                        <label for="novo-titulo">Título *</label>
+                        <label for="novo-titulo">Título</label>
                         <input type="text" id="novo-titulo" placeholder="Nome do livro" required>
                     </div>
                     <div>
-                        <label for="novo-autor">Autor *</label>
+                        <label for="novo-autor">Autor</label>
                         <input type="text" id="novo-autor" placeholder="Nome do autor" required>
                     </div>
                     <div>
-                        <label for="novo-ano">Ano *</label>
+                        <label for="novo-ano">Ano</label>
                         <input type="number" id="novo-ano" placeholder="Ano de publicação" min="1000" max="2099" required>
                     </div>
                     <div>
-                        <label for="novo-editora">Editora *</label>
+                        <label for="novo-editora">Editora</label>
                         <input type="text" id="novo-editora" placeholder="Editora" required>
                     </div>
                     <div>
                         <label for="novo-genero">Gênero</label>
-                        <input type="text" id="novo-genero" placeholder="Ex: Ficção, Fantasia, Romance...">
+                        <input type="text" id="novo-genero" placeholder="Ex: Ficção, Fantasia, Terror">
                     </div>
                     <div>
                         <label for="novo-classificacao">Classificação indicativa</label>
-                        <input type="text" id="novo-classificacao" placeholder="Ex: Livre, 10+, 12+, 14+, 16+, 18+">
+                        <input type="text" id="novo-classificacao" placeholder="Ex: Livre, 12+, 16+">
                     </div>
                     <div class="full-width">
                         <label for="novo-sinopse">Sinopse</label>
-                        <textarea id="novo-sinopse" rows="4" placeholder="Breve descrição do livro..." style="resize:vertical;"></textarea>
+                        <textarea id="novo-sinopse" rows="3" placeholder="Breve descrição do livro..."></textarea>
                     </div>
                     <div class="full-width">
                         <label for="novo-capa">URL da capa (opcional)</label>
                         <input type="text" id="novo-capa" placeholder="https://exemplo.com/capa.jpg">
+                        <input type="file" id="novo-capa-upload" accept="image/*" style="margin-top:8px;">
+                        <div id="preview-novo-capa-container" style="margin-top:8px; display:none;">
+                            <img id="preview-novo-capa" src="#" alt="Pré-visualização" style="max-width:120px; max-height:160px; border-radius:4px; border:1px solid #ddd;">
+                            <button type="button" onclick="document.getElementById('novo-capa').value=''; document.getElementById('preview-novo-capa-container').style.display='none';" style="background:#e74c3c; color:#fff; border:none; padding:2px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem; margin-left:8px;">Remover</button>
+                        </div>
                     </div>
                     <div class="full-width">
                         <button type="submit">Adicionar Livro</button>
@@ -355,7 +361,37 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         contentArea.innerHTML = html;
 
-        // Função para carregar os últimos livros com colunas extras
+        // ===== PRÉ-VISUALIZAÇÃO DA CAPA (upload) =====
+        const inputCapa = document.getElementById('novo-capa');
+        const inputUpload = document.getElementById('novo-capa-upload');
+        const previewContainer = document.getElementById('preview-novo-capa-container');
+        const previewImg = document.getElementById('preview-novo-capa');
+
+        function atualizarPreview(url) {
+            if (url && url.trim() !== '') {
+                previewImg.src = url;
+                previewContainer.style.display = 'block';
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        }
+
+        inputCapa.addEventListener('input', () => atualizarPreview(inputCapa.value));
+
+        inputUpload.addEventListener('change', function(e) {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    const dataUrl = ev.target.result;
+                    inputCapa.value = dataUrl;
+                    atualizarPreview(dataUrl);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // ===== CARREGAR ÚLTIMOS LIVROS =====
         async function carregarUltimosLivros() {
             const livros = await db.livros.toArray();
             const ultimos = livros.sort((a, b) => b.id - a.id).slice(0, 5);
@@ -365,31 +401,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             let tabela = `<table>
-                <thead><tr>
-                    <th>Título</th>
-                    <th>Autor</th>
-                    <th>Ano</th>
-                    <th>Editora</th>
-                    <th>Gênero</th>
-                    <th>Classificação</th>
-                </tr></thead>
-                <tbody>`;
+                <thead><tr><th>Título</th><th>Autor</th><th>Ano</th><th>Editora</th></tr></thead><tbody>`;
             ultimos.forEach(l => {
-                tabela += `<tr>
-                    <td>${l.titulo}</td>
-                    <td>${l.autor}</td>
-                    <td>${l.ano}</td>
-                    <td>${l.editora}</td>
-                    <td>${l.genero || '—'}</td>
-                    <td>${l.classificacao || 'Livre'}</td>
-                </tr>`;
+                tabela += `<tr><td>${l.titulo}</td><td>${l.autor}</td><td>${l.ano}</td><td>${l.editora}</td></tr>`;
             });
             tabela += `</tbody></table>`;
             container.innerHTML = tabela;
         }
         carregarUltimosLivros();
 
-        // Evento de submit do formulário
+        // ===== SUBMISSÃO =====
         document.getElementById('form-adicionar-livro').addEventListener('submit', async (e) => {
             e.preventDefault();
             const titulo = document.getElementById('novo-titulo').value.trim();
@@ -402,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const capa = document.getElementById('novo-capa').value.trim();
 
             if (!titulo || !autor || !ano || !editora) {
-                notificar('Preencha os campos obrigatórios (Título, Autor, Ano, Editora).', 'erro');
+                notificar('Preencha todos os campos obrigatórios.', 'erro');
                 return;
             }
 
@@ -425,7 +446,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             notificar(`Livro "${titulo}" adicionado com sucesso.`);
             document.getElementById('form-adicionar-livro').reset();
-            carregarUltimosLivros(); // atualiza a lista
+            document.getElementById('preview-novo-capa-container').style.display = 'none';
+            carregarUltimosLivros();
         });
     }
 

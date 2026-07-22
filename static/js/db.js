@@ -277,13 +277,15 @@ async function migrarCapa() {
 // ==========================================
 // FUNÇÃO DE SINCRONIZAÇÃO DE LIVROS (adiciona novos e remove os que saíram)
 // ==========================================
+// ==========================================
+// FUNÇÃO DE SINCRONIZAÇÃO DE LIVROS (apenas adiciona, NÃO remove)
+// ==========================================
 async function sincronizarLivros() {
     try {
         const livrosExistentes = await db.livros.toArray();
         const titulosExistentes = new Set(livrosExistentes.map(l => l.titulo));
-        const titulosNovos = new Set(LIVROS_INICIAIS.map(l => l.titulo));
 
-        // 1. Adiciona livros novos que não existem
+        // Adiciona livros novos que não existem
         let adicionados = 0;
         for (const livroNovo of LIVROS_INICIAIS) {
             if (!titulosExistentes.has(livroNovo.titulo)) {
@@ -295,27 +297,13 @@ async function sincronizarLivros() {
             console.warn(`📚 ${adicionados} novos livros adicionados.`);
         }
 
-        // 2. Remove livros que não estão mais na lista (desde que não tenham aluguéis ativos)
-        let removidos = 0;
-        for (const livroExistente of livrosExistentes) {
-            if (!titulosNovos.has(livroExistente.titulo)) {
-                // Verifica se o livro tem aluguel ativo
-                const aluguelAtivo = await db.alugueis
-                    .where('livro').equals(livroExistente.titulo)
-                    .filter(a => a.status === 'ativo')
-                    .first();
+        // ==========================================
+        // A REMOÇÃO DE LIVROS FOI REMOVIDA PARA SEGURANÇA.
+        // Livros adicionados manualmente (pelo admin)
+        // NUNCA serão removidos automaticamente.
+        // Para excluir um livro, use a interface "Editar Livros".
+        // ==========================================
 
-                if (aluguelAtivo) {
-                    console.warn(`⚠️ Livro "${livroExistente.titulo}" não pode ser removido porque tem aluguel ativo.`);
-                } else {
-                    await db.livros.delete(livroExistente.id);
-                    removidos++;
-                }
-            }
-        }
-        if (removidos > 0) {
-            console.warn(`🗑️ ${removidos} livros removidos da lista.`);
-        }
     } catch (err) {
         console.error('❌ Erro ao sincronizar livros:', err);
     }

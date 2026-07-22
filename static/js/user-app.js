@@ -802,8 +802,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Remove modal anterior se existir
             const existente = document.getElementById('modal-detalhes-livro');
             if (existente) existente.remove();
+
+            // ===== CAPA: usa a personalizada (se existir) ou o fallback padrão =====
+            const capaUrl = livro.capa || `static/src/${encodeURIComponent(livro.titulo)}.jpg`;
 
             const modal = document.createElement('div');
             modal.id = 'modal-detalhes-livro';
@@ -819,8 +823,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 padding: 20px;
                 animation: fadeIn 0.3s ease;
             `;
-
-            const capaUrl = `static/src/${encodeURIComponent(livro.titulo)}.jpg`;
 
             modal.innerHTML = `
                 <div style="
@@ -874,10 +876,13 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
 
             document.body.appendChild(modal);
+
+            // Fecha o modal ao clicar fora do conteúdo
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) modal.remove();
             });
 
+            // Adiciona a animação de fade (caso não exista no CSS)
             if (!document.getElementById('style-modal-fade')) {
                 const style = document.createElement('style');
                 style.id = 'style-modal-fade';
